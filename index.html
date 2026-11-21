@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>안선생 아카이브</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Pretendard', sans-serif; background: #fff; color: #111; line-height: 1.6; }
+  header { padding: 72px 24px 40px; max-width: 880px; margin: 0 auto; border-bottom: 1px solid #111; }
+  header h1 { font-size: 40px; font-weight: 800; letter-spacing: -1px; }
+  header p { color: #666; margin-top: 8px; }
+  .search { margin-top: 24px; width: 100%; padding: 12px 0; border: none; border-bottom: 1px solid #ccc; font-size: 16px; font-family: inherit; outline: none; }
+  .search:focus { border-color: #111; }
+  main { max-width: 880px; margin: 0 auto; padding: 24px; }
+  .level { margin-top: 48px; }
+  .level h2 { font-size: 13px; letter-spacing: 3px; color: #888; margin-bottom: 8px; }
+  .course h3 { font-size: 20px; margin: 28px 0 8px; }
+  details { border-bottom: 1px solid #e5e5e5; }
+  summary { list-style: none; cursor: pointer; padding: 16px 0; display: flex; justify-content: space-between; align-items: center; font-size: 17px; }
+  summary::-webkit-details-marker { display: none; }
+  summary .num { color: #aaa; font-size: 13px; width: 36px; display: inline-block; }
+  summary .count { font-size: 12px; color: #999; }
+  summary:hover { color: #555; }
+  details[open] summary { font-weight: 700; }
+  .items { padding: 0 0 16px 36px; }
+  .items a { display: block; padding: 10px 14px; margin-bottom: 6px; border: 1px solid #111; color: #111; text-decoration: none; transition: .15s; }
+  .items a:hover { background: #111; color: #fff; }
+  .empty { color: #bbb; font-size: 14px; }
+  footer { text-align: center; color: #aaa; font-size: 12px; padding: 64px 0 40px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>안선생 아카이브</h1>
+  <p>배운 내용을 언제든 다시 꺼내 보는 곳</p>
+  <input class="search" id="search" placeholder="단원이나 자료 이름으로 찾기">
+</header>
+<main id="app"></main>
+<footer>© 안선생 아카이브</footer>
+
+<script>
+// 자료 추가 방법: 해당 단원의 items에 { title: "자료 이름", url: "파일이름.html" } 을 넣으세요.
+const data = [
+  { level: "MIDDLE SCHOOL · 중학교 과학", courses: [
+    { name: "", units: [
+      { title: "과학과 인류의 지속가능한 삶", items: [] },
+      { title: "생물의 구성과 다양성", items: [] },
+      { title: "열", items: [] },
+      { title: "물질의 상태 변화", items: [] },
+      { title: "힘의 작용", items: [] },
+      { title: "기체의 성질", items: [] },
+      { title: "태양계", items: [] },
+      { title: "물질의 특성", items: [] },
+      { title: "지권의 변화", items: [] },
+      { title: "빛과 파동", items: [] },
+      { title: "물질의 구성", items: [] },
+      { title: "식물과 에너지", items: [] },
+      { title: "동물과 에너지", items: [] },
+      { title: "전기와 자기", items: [] },
+      { title: "별과 우주", items: [] },
+      { title: "화학 반응의 규칙성", items: [] },
+      { title: "날씨와 기후변화", items: [] },
+      { title: "수권과 해수의 순환", items: [] },
+      { title: "운동과 에너지", items: [] },
+      { title: "자극과 반응", items: [] },
+      { title: "생식과 유전", items: [] },
+      { title: "재해·재난과 안전", items: [] },
+      { title: "과학과 나의 미래", items: [] }
+    ]}
+  ]},
+  { level: "HIGH SCHOOL · 고등학교 과학", courses: [
+    { name: "통합과학1", units: [
+      { title: "과학의 기초", items: [] },
+      { title: "물질과 규칙성", items: [] },
+      { title: "시스템과 상호작용", items: [] }
+    ]},
+    { name: "통합과학2", units: [
+      { title: "변화와 다양성", items: [] },
+      { title: "환경과 에너지", items: [] },
+      { title: "과학과 미래 사회", items: [] }
+    ]},
+    { name: "물리학", units: [
+      { title: "힘과 에너지", items: [] },
+      { title: "전기와 자기", items: [] },
+      { title: "빛과 물질", items: [] }
+    ]},
+    { name: "역학과 에너지", units: [
+      { title: "시공간과 운동", items: [] },
+      { title: "열과 에너지", items: [] },
+      { title: "탄성파와 소리", items: [] }
+    ]},
+    { name: "전자기와 양자", units: [
+      { title: "전기장과 자기장", items: [] },
+      { title: "빛과 정보 통신", items: [] },
+      { title: "양자와 미시 세계", items: [] }
+    ]}
+  ]}
+];
+
+function render(keyword = "") {
+  const k = keyword.trim();
+  const app = document.getElementById("app");
+  app.innerHTML = "";
+  data.forEach(lv => {
+    const sec = document.createElement("section");
+    sec.className = "level";
+    sec.innerHTML = `<h2>${lv.level}</h2>`;
+    let shown = 0;
+    lv.courses.forEach(c => {
+      const div = document.createElement("div");
+      div.className = "course";
+      if (c.name) div.innerHTML = `<h3>${c.name}</h3>`;
+      let cShown = 0;
+      c.units.forEach((u, i) => {
+        const hit = !k || u.title.includes(k) || u.items.some(it => it.title.includes(k));
+        if (!hit) return;
+        cShown++;
+        const d = document.createElement("details");
+        if (k) d.open = true;
+        const links = u.items.length
+          ? u.items.map(it => `<a href="${it.url}">${it.title}</a>`).join("")
+          : `<p class="empty">자료 준비 중</p>`;
+        d.innerHTML = `<summary><span><span class="num">${String(i+1).padStart(2,"0")}</span>${u.title}</span><span class="count">${u.items.length ? u.items.length + "개" : ""}</span></summary><div class="items">${links}</div>`;
+        div.appendChild(d);
+      });
+      if (cShown) { sec.appendChild(div); shown += cShown; }
+    });
+    if (shown) app.appendChild(sec);
+  });
+}
+document.getElementById("search").addEventListener("input", e => render(e.target.value));
+render();
+</script>
+</body>
+</html>
