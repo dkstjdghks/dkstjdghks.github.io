@@ -44,14 +44,16 @@
 // 자료 추가 방법: 해당 단원의 items에 { title: "자료 이름", url: "파일이름.html" } 을 넣으세요.
 const data = [
   { level: "MIDDLE SCHOOL · 중학교 과학", courses: [
-    { name: "", units: [
+    { name: "과학1", units: [
       { title: "과학과 인류의 지속가능한 삶", items: [] },
       { title: "생물의 구성과 다양성", items: [] },
       { title: "열", items: [] },
       { title: "물질의 상태 변화", items: [] },
       { title: "힘의 작용", items: [] },
       { title: "기체의 성질", items: [] },
-      { title: "태양계", items: [] },
+      { title: "태양계", items: [] }
+    ]},
+    { name: "과학2", units: [
       { title: "물질의 특성", items: [] },
       { title: "지권의 변화", items: [] },
       { title: "빛과 파동", items: [] },
@@ -59,7 +61,9 @@ const data = [
       { title: "식물과 에너지", items: [] },
       { title: "동물과 에너지", items: [] },
       { title: "전기와 자기", items: [] },
-      { title: "별과 우주", items: [] },
+      { title: "별과 우주", items: [] }
+    ]},
+    { name: "과학3", units: [
       { title: "화학 반응의 규칙성", items: [] },
       { title: "날씨와 기후변화", items: [] },
       { title: "수권과 해수의 순환", items: [] },
@@ -111,10 +115,10 @@ function render(keyword = "") {
     lv.courses.forEach(c => {
       const div = document.createElement("div");
       div.className = "course";
-      if (c.name) div.innerHTML = `<h3>${c.name}</h3>`;
+      div.innerHTML = `<h3>${c.name}</h3>`;
       let cShown = 0;
       c.units.forEach((u, i) => {
-        const hit = !k || u.title.includes(k) || u.items.some(it => it.title.includes(k));
+        const hit = !k || u.title.includes(k) || c.name.includes(k) || u.items.some(it => it.title.includes(k));
         if (!hit) return;
         cShown++;
         const d = document.createElement("details");
