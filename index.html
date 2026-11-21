@@ -8,15 +8,28 @@
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'Pretendard', sans-serif; background: #fff; color: #111; line-height: 1.6; }
-  header { padding: 72px 24px 40px; max-width: 880px; margin: 0 auto; border-bottom: 1px solid #111; }
-  header h1 { font-size: 40px; font-weight: 800; letter-spacing: -1px; }
+  header { padding: 72px 24px 32px; max-width: 880px; margin: 0 auto; border-bottom: 1px solid #111; }
+  header h1 { font-size: 40px; font-weight: 800; letter-spacing: -1px; cursor: pointer; }
   header p { color: #666; margin-top: 8px; }
   .search { margin-top: 24px; width: 100%; padding: 12px 0; border: none; border-bottom: 1px solid #ccc; font-size: 16px; font-family: inherit; outline: none; }
   .search:focus { border-color: #111; }
+  .tabs { margin-top: 20px; display: flex; gap: 8px; }
+  .tabs button { font-family: inherit; font-size: 14px; padding: 8px 16px; border: 1px solid #111; background: #fff; color: #111; cursor: pointer; }
+  .tabs button.on { background: #111; color: #fff; }
   main { max-width: 880px; margin: 0 auto; padding: 24px; }
-  .level { margin-top: 48px; }
-  .level h2 { font-size: 13px; letter-spacing: 3px; color: #888; margin-bottom: 8px; }
+  .level { margin-top: 40px; }
+  .level h2 { font-size: 13px; letter-spacing: 3px; color: #888; margin-bottom: 12px; }
   .course h3 { font-size: 20px; margin: 28px 0 8px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+  .card { border: 1px solid #111; padding: 24px 20px; cursor: pointer; transition: .15s; }
+  .card:hover { background: #111; color: #fff; }
+  .card .name { font-size: 20px; font-weight: 700; }
+  .card .meta { font-size: 13px; color: #888; margin-top: 6px; }
+  .card:hover .meta { color: #ccc; }
+  .back { display: inline-block; margin-top: 24px; font-size: 14px; color: #666; cursor: pointer; border: none; background: none; font-family: inherit; }
+  .back:hover { color: #111; }
+  .crumb { font-size: 13px; letter-spacing: 2px; color: #888; margin-top: 24px; }
+  .title { font-size: 28px; font-weight: 800; margin: 4px 0 16px; }
   details { border-bottom: 1px solid #e5e5e5; }
   summary { list-style: none; cursor: pointer; padding: 16px 0; display: flex; justify-content: space-between; align-items: center; font-size: 17px; }
   summary::-webkit-details-marker { display: none; }
@@ -33,9 +46,13 @@
 </head>
 <body>
 <header>
-  <h1>안선생 아카이브</h1>
+  <h1 onclick="go('')">안선생 아카이브</h1>
   <p>배운 내용을 언제든 다시 꺼내 보는 곳</p>
   <input class="search" id="search" placeholder="단원이나 자료 이름으로 찾기">
+  <div class="tabs">
+    <button id="tabCourse" onclick="go('')">과목별 보기</button>
+    <button id="tabAll" onclick="go('all')">전체 목록</button>
+  </div>
 </header>
 <main id="app"></main>
 <footer>© 안선생 아카이브</footer>
@@ -103,38 +120,79 @@ const data = [
   ]}
 ];
 
-function render(keyword = "") {
-  const k = keyword.trim();
-  const app = document.getElementById("app");
-  app.innerHTML = "";
-  data.forEach(lv => {
-    const sec = document.createElement("section");
-    sec.className = "level";
-    sec.innerHTML = `<h2>${lv.level}</h2>`;
-    let shown = 0;
-    lv.courses.forEach(c => {
-      const div = document.createElement("div");
-      div.className = "course";
-      div.innerHTML = `<h3>${c.name}</h3>`;
-      let cShown = 0;
-      c.units.forEach((u, i) => {
-        const hit = !k || u.title.includes(k) || c.name.includes(k) || u.items.some(it => it.title.includes(k));
-        if (!hit) return;
-        cShown++;
-        const d = document.createElement("details");
-        if (k) d.open = true;
-        const links = u.items.length
-          ? u.items.map(it => `<a href="${it.url}">${it.title}</a>`).join("")
-          : `<p class="empty">자료 준비 중</p>`;
-        d.innerHTML = `<summary><span><span class="num">${String(i+1).padStart(2,"0")}</span>${u.title}</span><span class="count">${u.items.length ? u.items.length + "개" : ""}</span></summary><div class="items">${links}</div>`;
-        div.appendChild(d);
-      });
-      if (cShown) { sec.appendChild(div); shown += cShown; }
-    });
-    if (shown) app.appendChild(sec);
-  });
+const app = document.getElementById("app");
+const search = document.getElementById("search");
+
+function unitHTML(u, i, open) {
+  const links = u.items.length
+    ? u.items.map(it => `<a href="${it.url}">${it.title}</a>`).join("")
+    : `<p class="empty">자료 준비 중</p>`;
+  return `<details${open ? " open" : ""}><summary><span><span class="num">${String(i+1).padStart(2,"0")}</span>${u.title}</span><span class="count">${u.items.length ? u.items.length + "개" : ""}</span></summary><div class="items">${links}</div></details>`;
 }
-document.getElementById("search").addEventListener("input", e => render(e.target.value));
+
+function countItems(c) { return c.units.reduce((s, u) => s + u.items.length, 0); }
+
+function go(hash) { search.value = ""; location.hash = hash; if (location.hash.slice(1) === hash) render(); }
+
+function setTab(mode) {
+  document.getElementById("tabCourse").classList.toggle("on", mode !== "all");
+  document.getElementById("tabAll").classList.toggle("on", mode === "all");
+}
+
+function renderHome() {
+  setTab("course");
+  app.innerHTML = data.map((lv, li) => `
+    <section class="level"><h2>${lv.level}</h2>
+      <div class="grid">
+        ${lv.courses.map((c, ci) => `
+          <div class="card" onclick="go('c-${li}-${ci}')">
+            <div class="name">${c.name}</div>
+            <div class="meta">${c.units.length}개 단원${countItems(c) ? " · 자료 " + countItems(c) + "개" : ""}</div>
+          </div>`).join("")}
+      </div>
+    </section>`).join("");
+}
+
+function renderCourse(li, ci) {
+  setTab("course");
+  const lv = data[li], c = lv && lv.courses[ci];
+  if (!c) return renderHome();
+  app.innerHTML = `
+    <button class="back" onclick="go('')">← 과목 목록으로</button>
+    <div class="crumb">${lv.level}</div>
+    <div class="title">${c.name}</div>
+    ${c.units.map((u, i) => unitHTML(u, i, false)).join("")}`;
+}
+
+function renderAll(keyword) {
+  setTab("all");
+  const k = (keyword || "").trim();
+  let html = "";
+  data.forEach(lv => {
+    let sec = "";
+    lv.courses.forEach(c => {
+      const units = c.units.map((u, i) => {
+        const hit = !k || u.title.includes(k) || c.name.includes(k) || u.items.some(it => it.title.includes(k));
+        return hit ? unitHTML(u, i, !!k) : "";
+      }).join("");
+      if (units) sec += `<div class="course"><h3>${c.name}</h3>${units}</div>`;
+    });
+    if (sec) html += `<section class="level"><h2>${lv.level}</h2>${sec}</section>`;
+  });
+  app.innerHTML = html || `<p class="empty" style="margin-top:40px">찾는 내용이 없어요.</p>`;
+}
+
+function render() {
+  const h = location.hash.slice(1);
+  if (search.value.trim()) return renderAll(search.value);
+  if (h === "all") return renderAll("");
+  const m = h.match(/^c-(\d+)-(\d+)$/);
+  if (m) return renderCourse(+m[1], +m[2]);
+  renderHome();
+}
+
+search.addEventListener("input", render);
+window.addEventListener("hashchange", render);
 render();
 </script>
 </body>
