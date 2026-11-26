@@ -41,6 +41,13 @@
   .items a { display: block; padding: 10px 14px; margin-bottom: 6px; border: 1px solid #111; color: #111; text-decoration: none; transition: .15s; }
   .items a:hover { background: #111; color: #fff; }
   .empty { color: #bbb; font-size: 14px; }
+  .game-banner { display: flex; justify-content: space-between; align-items: center; gap: 16px; border: 1px solid #111; padding: 28px 24px; color: #111; text-decoration: none; transition: .15s; }
+  .game-banner:hover { background: #111; color: #fff; }
+  .game-banner .name { font-size: 22px; font-weight: 800; }
+  .game-banner .meta { font-size: 13px; color: #888; margin-top: 6px; }
+  .game-banner:hover .meta { color: #ccc; }
+  .game-banner .go { font-size: 14px; white-space: nowrap; }
+  .game-list { display: grid; gap: 12px; }
   footer { text-align: center; color: #aaa; font-size: 12px; padding: 64px 0 40px; }
 </style>
 </head>
@@ -120,6 +127,11 @@ const data = [
   ]}
 ];
 
+// 게임 배너: 과목과 따로, 첫 화면 맨 아래에 보입니다.
+const games = [
+  { title: "과학 마을 탐험", meta: "2D 탐험 학습 게임 · 프로토타입 · 휴대폰에서도 플레이", url: "science-rpg.html" }
+];
+
 const app = document.getElementById("app");
 const search = document.getElementById("search");
 
@@ -150,7 +162,13 @@ function renderHome() {
             <div class="meta">${c.units.length}개 단원${countItems(c) ? " · 자료 " + countItems(c) + "개" : ""}</div>
           </div>`).join("")}
       </div>
-    </section>`).join("");
+    </section>`).join("") + gamesHTML(games);
+}
+
+function gamesHTML(list) {
+  if (!list.length) return "";
+  return `<section class="level"><h2>GAME · 과학 탐험 게임</h2><div class="game-list">${list.map(g => `
+    <a class="game-banner" href="${g.url}"><div><div class="name">${g.title}</div><div class="meta">${g.meta}</div></div><span class="go">시작하기 →</span></a>`).join("")}</div></section>`;
 }
 
 function renderCourse(li, ci) {
@@ -179,6 +197,7 @@ function renderAll(keyword) {
     });
     if (sec) html += `<section class="level"><h2>${lv.level}</h2>${sec}</section>`;
   });
+  html += gamesHTML(games.filter(g => !k || g.title.includes(k) || "게임".includes(k)));
   app.innerHTML = html || `<p class="empty" style="margin-top:40px">찾는 내용이 없어요.</p>`;
 }
 
