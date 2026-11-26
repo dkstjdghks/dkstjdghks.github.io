@@ -187,6 +187,7 @@ body.touch.land #bM{left:auto;right:22px;top:14px;transform:none}
    - 컴퓨터: 방향키 이동, A 확인, S 취소, 엔터 메뉴
    - 캐릭터: 남/여 교복, 머리·머리색·안경·옷·소품 선택. 레벨이 오르면 코디템이 열림
    - 저장: 이 기기 브라우저에만 저장 (이름·학번 등 개인정보는 받지 않음)
+   - 시작하면 교실에서 안선생 NPC가 튜토리얼 진행 (건너뛰기 가능)
    - 대사·문제·단서는 CONTENT / MAPS / UNITS 안의 [예시]. 나중에 실제 내용으로 교체
    ===================================================================== */
 const T=16;
@@ -226,6 +227,7 @@ function unlockNames(lv){
 /* ---------- 콘텐츠 (예시) ---------- */
 const CONTENT={
   clues:{
+    t0:{unit:'u0',name:'탐험 규칙',text:'관찰하고, 기록하고, 증거로 말하기!',xp:10},
     c1:{unit:'u1',name:'식물 도감 한 쪽',text:'[예시] 식물은 잎에서 빛을 이용해 스스로 양분을 만든다.'},
     c2:{unit:'u1',name:'자료실 문제 정답',text:'[예시] 양분을 만드는 데에는 빛이 꼭 필요하다.'},
     c3:{unit:'u1',name:'실험 관찰 기록',text:'[예시] 물과 흙이 있어도 빛이 없으면 식물은 자라지 못했다.'}
@@ -238,6 +240,10 @@ const CONTENT={
   }]
 };
 const UNITS=[
+  {id:'u0',name:'교실',topic:'튜토리얼 · 게임 방법 익히기',maps:['classroom'],
+   goals:[{id:'tutStarted',text:'안선생님께 설명 듣기'},{id:'t0',text:'칠판 조사하기'},{id:'tutorial',text:'설명을 끝까지 듣고 교실 나가기'}],
+   summary:['이동은 방향키, 조사·대화는 ○(A), 취소는 ✕(S), 메뉴는 MENU(Enter)','단서를 모아 잘못 알고 있는 사람을 설득하면 다음 지역이 열린다.'],
+   isOpen:()=>true,isClear:()=>!!state.flags.tutorial},
   {id:'u1',name:'새싹 마을',topic:'식물과 에너지 (예시)',maps:['town','lab','library'],
    goals:[{id:'c1',text:'자료실 책장 조사하기'},{id:'c2',text:'자료실 컴퓨터 문제 풀기'},{id:'c3',text:'실험실에서 식물을 끝까지 키우기'},{id:'persuaded',text:'고집쟁이 주민 설득하기'}],
    summary:['[예시] 식물은 빛을 이용해 스스로 양분을 만든다.','[예시] 물과 흙만 있고 빛이 없으면 식물은 자라지 못한다.'],
@@ -248,6 +254,7 @@ const UNITS=[
 
 /* ---------- NPC 모습 ---------- */
 const NPC_LOOK={
+  ansun:{g:'m',hair:0,hc:0,gl:1,out:'c',top:'#dfe8f2',bottom:'#3d4250',tieCol:'#2e3a66',acc:0},
   guide:{g:'f',hair:1,hc:1,gl:0,out:'c',top:'#e76f51',bottom:'#4a4a5a',acc:0},
   doubter:{g:'m',hair:1,hc:0,gl:0,out:'c',top:'#8d6cc4',bottom:'#3a3a44',acc:0},
   guard:{g:'m',hair:2,hc:0,gl:0,out:'c',top:'#3d5a80',bottom:'#2b2d42',acc:1,accCol:'#3d5a80'},
@@ -262,6 +269,20 @@ const NPC_LOOK={
  R 지붕  H 집 벽  D 집 문  F 울타리  S 표지판  G 잠긴 문
  B 책장  T 책상  X 실험대  Q 문제 컴퓨터  d 출입 매트  u 나가는 길 */
 const MAPS={
+  classroom:{name:'교실',indoor:true,rows:[
+    '############',
+    '#..KKKKKK..#',
+    '#........TT#',
+    '#..........#',
+    '#.TT.TT.TT.#',
+    '#..........#',
+    '#.TT.TT.TT.#',
+    '#..........#',
+    '#####dd#####'],
+    warps:{'5,8':{to:'town',x:7,y:7,dir:'down'},'6,8':{to:'town',x:7,y:7,dir:'down'}},
+    locked:{'5,8':1,'6,8':1},lockFlag:'tutorial',
+    lockMsg:['문이 잠겨 있다.','안선생님 설명을 먼저 들어 보자.'],
+    npcs:[{id:'ansun',name:'안선생',x:4,y:3,dir:'down',talk:ansunTalk}]},
   town:{name:'새싹 마을',indoor:false,rows:[
     '####################',
     '#,,..............,,#',
@@ -345,11 +366,46 @@ const MAPS={
     ]}
 };
 
+/* 튜토리얼: 안선생 */
+function ansunTalk(){
+  const f=state.flags;
+  if(f.tutorial)return {lines:['새싹 마을 사람들이 기다리고 있어. 아래쪽 문으로 나가 보자!','모르는 게 생기면 MENU의 학습 노트를 열어 봐.']};
+  if(!f.tutStarted)return {lines:['안녕! 나는 안선생이야. 너희의 과학 탐험을 도와줄 선생님이지.','처음이니까 게임 방법을 간단히 알려 줄까?'],
+    choice:{labels:['네, 알려 주세요','괜찮아요 (건너뛰기)'],on:[()=>{
+      f.tutStarted=true;save();updateHUD();
+      say(['좋아! 먼저 걸어 보자.',
+        isTouch?'왼쪽 십자 버튼을 누르면 위·아래·왼쪽·오른쪽으로 움직여.':'키보드 방향키를 누르면 위·아래·왼쪽·오른쪽으로 움직여.',
+        '내 뒤쪽 칠판 앞까지 걸어가서, 칠판을 바라본 채로 '+(isTouch?'○ 버튼':'A 키')+'를 눌러 봐.',
+        '사람에게 말을 걸거나 물건을 조사할 때도 같은 버튼을 써.'],{name:'안선생'});
+    },()=>{
+      say(['좋아, 바로 출발하자!','아래쪽 문으로 나가면 새싹 마을이야.','모르는 게 생기면 '+(isTouch?'MENU 버튼':'Enter 키')+'를 눌러 학습 노트를 봐.'],
+        {name:'안선생',after:finishTutorial});
+    }]}};
+  if(!state.clues.t0)return {lines:['칠판 앞까지 걸어가서, 칠판을 바라본 채로 '+(isTouch?'○ 버튼':'A 키')+'를 눌러 봐.']};
+  return {lines:[
+    '잘했어! 방금 찾은 건 「단서」야. 단서는 단서 노트에 모이고 경험치(XP)도 올라가.',
+    '마을마다 해결해야 할 문제가 하나씩 있어.',
+    '사람들과 이야기하고, 물건을 조사하고, 실험도 해서 단서를 모아 봐.',
+    '단서가 다 모이면 잘못 알고 있는 사람을 증거로 설득할 수 있어. 그러면 다음 지역으로 가는 길이 열려.',
+    '레벨이 오르면 새 옷과 소품이 생겨. 옷장에서 갈아입을 수 있지.',
+    (isTouch?'MENU 버튼':'Enter 키')+'을 누르면 학습 노트, 배운 내용, 옷장을 볼 수 있어. 다음에 뭘 해야 할지 모르겠으면 학습 노트를 봐.',
+    '질문에 답할 때는 ▲▼로 고르고 '+(isTouch?'○':'A')+'로 정해. '+(isTouch?'✕ 버튼':'S 키')+'는 취소, 또는 「아니요」야.',
+    '자, 잘 이해했니?'],
+    choice:{labels:['네!','한 번 더 들을래요'],on:[()=>{
+      say(['좋아! 아래쪽 문이 열렸어. 새싹 마을로 나가 보자!'],{name:'안선생',after:finishTutorial});
+    },()=>{const r=ansunTalk();say(r.lines,{name:'안선생',choice:r.choice})}]}};
+}
+function finishTutorial(){
+  if(state.flags.tutorial)return;
+  state.flags.tutorial=true;state.flags.tutStarted=true;save();updateHUD();
+  toast('교실 문이 열렸다!');
+}
+
 function doubterTalk(){
   if(state.flags.persuaded) return {lines:['네 말이 맞았어. 식물은 빛을 받아 스스로 양분을 만드는구나!','남쪽 문은 열어 두었어.']};
   return {lines:['식물은 흙을 먹고 자라는 거야! 당연하잖아?','아니라고? 그럼 증거라도 있어?'],
     choice:{labels:['증거를 보여 준다','아니요'],on:[()=>{
-      const n=clueCount();
+      const n=unitFound('u1');
       if(n>=3){
         say(['(단서 노트의 증거 3개를 보여 주었다.)','...흙과 물이 있어도 빛이 없으면 자라지 않았다고?','내가 틀렸네. 고마워! 남쪽 문을 열어 줄게.'],{name:'고집쟁이 주민',after:()=>{
           state.flags.persuaded=true;save();toast('남쪽 문이 열렸다!');gainXP(40);
@@ -362,11 +418,13 @@ function doubterTalk(){
 
 /* ---------- 상태·저장 ---------- */
 function newExp(){return{day:0,height:0,health:100,light:2,water:1,log:[]}}
-function freshState(){return{v:2,map:'town',x:7,y:7,dir:'down',flags:{},clues:{},talked:{},xp:0,
+function freshState(){return{v:3,map:'classroom',x:4,y:6,dir:'up',flags:{},clues:{},talked:{},xp:0,
   look:{g:'m',hair:0,hc:0,gl:0,out:0,acc:0},exp:newExp()}}
 let state=freshState();
 let started=false;
 function clueCount(){return Object.keys(state.clues).length}
+function unitClueIds(uid){return Object.keys(CONTENT.clues).filter(id=>CONTENT.clues[id].unit===uid)}
+function unitFound(uid){return unitClueIds(uid).filter(id=>state.clues[id]).length}
 function save(){if(!started)return;try{localStorage.setItem(SAVE_KEY,JSON.stringify(state))}catch(e){}}
 function loadSave(){try{const s=localStorage.getItem(SAVE_KEY);return s?JSON.parse(s):null}catch(e){return null}}
 function clearSave(){try{localStorage.removeItem(SAVE_KEY)}catch(e){}}
@@ -405,6 +463,8 @@ function paintTile(g,ch,indoor,variant){
     case 'T':pTable(g);break;
     case 'X':pTable(g);r(g,3,8,5,4,'#b5653a');r(g,5,4,1,4,'#3c9a3c');r(g,3,4,2,2,'#4fb04f');r(g,6,3,2,2,'#4fb04f');r(g,10,5,3,6,'#cfe9f7');r(g,10,8,3,3,'#4aa3df');r(g,11,3,1,2,'#cfe9f7');break;
     case 'Q':pTable(g);r(g,4,1,8,8,'#333');r(g,5,2,6,5,'#5fd3e0');r(g,6,3,3,1,'#fff');r(g,7,9,2,2,'#333');r(g,3,11,10,1,'#555');break;
+    case 'K':r(g,0,0,16,16,'#cdbfa6');r(g,0,1,16,13,'#7a5a3a');r(g,0,2,16,11,'#2f5d46');r(g,0,13,16,1,'#a88a5e');
+      r(g,2,4,7,1,'#e8efe8');r(g,3,7,10,1,'#cfe0d2');r(g,2,10,5,1,'#cfe0d2');r(g,11,10,2,1,'#f2e6a0');break;
     case 'd':pFloor(g);r(g,2,2,12,12,'#b94a48');r(g,3,3,10,10,'#d0605c');break;
     default:r(g,0,0,16,16,'#000');
   }
@@ -464,7 +524,7 @@ function drawFB(P,L,o,H,HH,hs,back,frame){
       if(L.g==='m'){P(7,11,2,3,o.tie)}else{P(6,11,4,1,o.tie);P(7,12,2,1,shade(o.tie))}
       if(o.detail==='winter'){P(5,12,1,1,'#c9a54a')}
     }else if(o.detail==='gym'){P(6,10,4,1,'#ffffff');P(7,11,1,3,'#e6e6e6')}
-    else if(o.detail==='casual'){P(6,10,4,1,shade(o.top,.85))}
+    else if(o.detail==='casual'){P(6,10,4,1,shade(o.top,.85));if(L.tieCol)P(7,11,2,3,L.tieCol)}
   }
   // 팔
   const sl=shade(o.sleeve,.85);
@@ -603,14 +663,16 @@ function loadMap(id,x,y,dir){
   state.map=id;state.x=x;state.y=y;state.dir=dir;
   if(id==='forest'&&started&&!state.flags.u2visited){state.flags.u2visited=true}
   save();
-  if(started)showBanner(map.name);
+  if(started){showBanner(map.name);updateHUD()}
 }
 function tileAt(x,y){if(y<0||y>=map.rows.length||x<0||x>=map.rows[0].length)return '#';return map.rows[y][x]}
-const SOLID=new Set('#RH~FBTXQS'.split(''));
+const SOLID=new Set('#RH~FBTXQSK'.split(''));
+function isLocked(x,y){return !!(map.locked&&map.locked[x+','+y]&&!state.flags[map.lockFlag])}
 function passable(x,y,self){
   const c=tileAt(x,y);
   if(SOLID.has(c))return false;
   if(c==='G'&&!isOpenGate())return false;
+  if(isLocked(x,y))return false;
   if(!self.isPlayer&&(c==='G'||c==='u'||(map.warps&&map.warps[x+','+y])))return false;
   for(const e of entities){
     if(e===self)continue;
@@ -807,7 +869,10 @@ let bannerT=null,toastT=null;
 function showBanner(t){bannerEl.textContent=t;bannerEl.classList.add('show');clearTimeout(bannerT);bannerT=setTimeout(()=>bannerEl.classList.remove('show'),2200)}
 function toast(t){toastEl.textContent=t;toastEl.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>toastEl.classList.remove('show'),2000)}
 function xpPop(t){xpEl.textContent=t;xpEl.classList.remove('show');void xpEl.offsetWidth;xpEl.classList.add('show')}
-function updateHUD(){document.getElementById('lvBadge').textContent='Lv.'+level()+' · 단서 '+clueCount()+'/3'}
+function updateHUD(){
+  const u=currentUnit(),m=unitClueIds(u.id).length;
+  document.getElementById('lvBadge').textContent='Lv.'+level()+(m?' · 단서 '+unitFound(u.id)+'/'+m:'');
+}
 
 /* ---------- 경험치·단서 ---------- */
 function gainXP(n){
@@ -826,7 +891,7 @@ function giveClue(id){
   if(state.clues[id])return;
   state.clues[id]=true;updateHUD();save();
   toast('단서 획득! '+CONTENT.clues[id].name);
-  gainXP(20);
+  gainXP(CONTENT.clues[id].xp||20);
 }
 
 /* ---------- 상호작용 ---------- */
@@ -845,6 +910,7 @@ function interact(){
   }
   const key=tx+','+ty,ch=tileAt(tx,ty);
   if(map.signs&&map.signs[key]){say(map.signs[key]);return}
+  if(isLocked(tx,ty)){say(map.lockMsg);return}
   switch(ch){
     case 'X':openExperiment();return;
     case 'Q':openQuiz();return;
@@ -853,6 +919,12 @@ function interact(){
         if(!state.clues.c1)say(['책장에서 식물 도감을 찾았다.','「'+CONTENT.clues.c1.text+'」'],{after:()=>giveClue('c1')});
         else say(['식물 도감은 이미 단서 노트에 적어 두었다.']);
       }else say(['실험 기록 노트가 빼곡히 꽂혀 있다.']);
+      return;
+    case 'K':
+      if(!state.flags.tutStarted&&!state.flags.tutorial)say(['칠판에 「오늘의 탐험」이라고 적혀 있다.']);
+      else if(!state.clues.t0)say(['칠판에 무언가 적혀 있다.','「과학 탐험 규칙: '+CONTENT.clues.t0.text+'」'],{after:()=>{giveClue('t0');
+        if(!state.flags.tutorial)queue.push(()=>say(['단서 노트에 적었다!','안선생님께 다시 가서 '+(isTouch?'○ 버튼':'A 키')+'로 말을 걸어 보자.']))}});
+      else say(['「과학 탐험 규칙: '+CONTENT.clues.t0.text+'」']);
       return;
     case 'T':say(['깨끗한 책상이다.']);return;
     case 'G':if(!isOpenGate())say(['굳게 잠긴 문이다.','마을 문제가 해결되면 열릴 것 같다.']);return;
@@ -1114,7 +1186,11 @@ function startCreate(){
   openWardrobe('create',()=>{
     started=true;
     loadMap(state.map,state.x,state.y,state.dir);updateHUD();save();
-    say(['(프로토타입) 새싹 마을에 도착했다.','사람 앞에서 ○ 버튼을 누르면 말을 걸 수 있다.','MENU에서 학습 노트와 옷장을 볼 수 있다.']);
+    say(['여기는 학교 교실이다.','앞에 계신 안선생님이 무언가 말하려고 하신다.'],{after:()=>{
+      const t=entities.find(e=>e.def&&e.def.id==='ansun');
+      if(t){t.dir=OPP[player.dir];if(!state.talked.ansun){state.talked.ansun=true;gainXP(5)}}
+      const r=ansunTalk();say(r.lines,{name:'안선생',choice:r.choice});
+    }});
   });
 }
 function continueGame(){
@@ -1122,6 +1198,7 @@ function continueGame(){
   state=Object.assign(freshState(),s||{});
   state.look=Object.assign(freshState().look,state.look||{});
   if(!MAPS[state.map]){state.map='town';state.x=7;state.y=7}
+  if(!state.flags.tutorial&&state.map!=='classroom')state.flags.tutorial=true;
   started=true;
   loadMap(state.map,state.x,state.y,state.dir);updateHUD();
 }
@@ -1134,13 +1211,16 @@ function resetGame(){
 
 /* ---------- 업데이트·렌더 ---------- */
 function updatePlayer(dt){
+  if(player.bumpT>0&&!layers.length)player.bumpT-=dt;
   if(player.moving)return;
   if(fade.dir!==0||layers.length)return;
   const d=heldDir();
   if(!d){player.chain=false;player.turnDelay=0;return}
   if(!player.chain&&d!==player.dir){player.dir=d;player.turnDelay=0.09;return}
   if(player.turnDelay>0){player.turnDelay-=dt;return}
-  if(startMove(player,d))player.chain=true;
+  if(startMove(player,d)){player.chain=true;return}
+  const[dx,dy]=DIRS[d];
+  if(isLocked(player.x+dx,player.y+dy)&&!(player.bumpT>0)){player.bumpT=1.5;say(map.lockMsg)}
 }
 function updateNPC(e,dt){
   if(e.moving)return;
