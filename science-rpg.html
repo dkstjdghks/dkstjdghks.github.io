@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#16151c">
-<title>과학 마을 탐험</title>
+<title>안선생 과학 RPG</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
@@ -161,7 +161,7 @@ body.touch.land #bM{left:auto;right:22px;top:14px;transform:none}
   <div id="screen">
     <div id="wrap">
       <canvas id="game"></canvas>
-      <div id="hud"><span id="lvBadge">Lv.1</span><button id="hudMenu" type="button">MENU (C)</button></div>
+      <div id="hud"><span id="lvBadge">Lv.1</span><button id="hudMenu" type="button">MENU (Enter)</button></div>
       <div id="banner"></div>
       <div id="toast"></div>
       <div id="xpPop"></div>
@@ -182,9 +182,9 @@ body.touch.land #bM{left:auto;right:22px;top:14px;transform:none}
 <script>
 'use strict';
 /* =====================================================================
-   과학 마을 탐험 — 구동 프로토타입 v2
+   안선생 과학 RPG — 구동 프로토타입 v3
    - 휴대폰 브라우저 기준: 왼쪽 방향키(대각선 없음), 오른쪽 ○ 확인 / ✕ 취소, MENU
-   - 컴퓨터: 방향키·WASD 이동, Z·스페이스·엔터 확인, X·Esc 취소, C 메뉴
+   - 컴퓨터: 방향키 이동, A 확인, S 취소, 엔터 메뉴
    - 캐릭터: 남/여 교복, 머리·머리색·안경·옷·소품 선택. 레벨이 오르면 코디템이 열림
    - 저장: 이 기기 브라우저에만 저장 (이름·학번 등 개인정보는 받지 않음)
    - 대사·문제·단서는 CONTENT / MAPS / UNITS 안의 [예시]. 나중에 실제 내용으로 교체
@@ -656,8 +656,8 @@ function press(a){
   if(a==='ok')interact();
   else if(a==='menu')openMenu();
 }
-const CODE_DIR={ArrowUp:'up',KeyW:'up',ArrowDown:'down',KeyS:'down',ArrowLeft:'left',KeyA:'left',ArrowRight:'right',KeyD:'right'};
-const OK_KEYS=['KeyZ','Space','Enter','KeyE'],CANCEL_KEYS=['KeyX','Escape','Backspace'],MENU_KEYS=['KeyC','KeyM'];
+const CODE_DIR={ArrowUp:'up',ArrowDown:'down',ArrowLeft:'left',ArrowRight:'right'};
+const OK_KEYS=['KeyA','Space'],CANCEL_KEYS=['KeyS','Escape'],MENU_KEYS=['Enter','NumpadEnter'];
 addEventListener('keydown',e=>{
   if(e.target&&/INPUT|TEXTAREA/.test(e.target.tagName))return;
   const d=CODE_DIR[e.code];
@@ -1088,7 +1088,7 @@ function openQuiz(){
 function keyGuideHTML(){
   return isTouch
     ?'<div class="keys">◀▲▼▶ 이동 (왼손)<br>○ 확인·말 걸기·조사 · ✕ 취소 (오른손)<br>MENU 학습 노트·옷장</div>'
-    :'<div class="keys">방향키 / WASD 이동<br>Z·스페이스·엔터 확인 · X·Esc 취소<br>C 메뉴 (학습 노트·옷장)</div>';
+    :'<div class="keys">방향키 이동<br>A 확인·말 걸기·조사 · S 취소<br>Enter 메뉴 (학습 노트·옷장)</div>';
 }
 function openTitle(){
   const has=!!loadSave();
@@ -1096,7 +1096,7 @@ function openTitle(){
   if(has)acts.push({label:'이어하기',act:'cont'});
   acts.push({label:'새로 시작',act:'new'});
   listLayer({cls:'title',footer:'',
-    html:`<a class="home" href="./">← 안선생 아카이브</a><div class="tt">과학 마을 탐험</div><div class="ts">2D 탐험 학습 게임 · 프로토타입</div>
+    html:`<a class="home" href="./">← 안선생 아카이브</a><div class="tt">안선생 과학 RPG</div><div class="ts">2D 탐험 학습 게임 · 프로토타입</div>
       <div class="tchars"><canvas class="ava" width="18" height="22"></canvas><canvas class="ava" width="18" height="22"></canvas></div>${keyGuideHTML()}`,
     items:acts,
     onRender:el=>{const cs=el.querySelectorAll('canvas.ava');
