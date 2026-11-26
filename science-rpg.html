@@ -210,6 +210,7 @@ body.touch.land #bM{left:auto;right:22px;top:14px;transform:none}
    - 저장: 이 기기 브라우저에만 저장 (이름·학번 등 개인정보는 받지 않음)
    - 시작: 성별 고르기(고정) → 이름(별명) 짓기 → 꾸미기 → 교실 튜토리얼(안선생, 건너뛰기 가능)
    - 대화 중 ✕(S)를 누르면 대화가 바로 끝남 (질문이 있는 대화는 질문으로 바로 넘어감)
+   - 과목 지역: 길을 따라 중1→중2→중3 순서로 단원 문(아카이브 단원 목록 기준), 안내원이 과목·세부 분야·단원 설명
    - 새싹 마을: 학교 앞에서 네 방향 길 (북=물리, 서=생명, 동=지구과학, 남=화학). 마을 문제를 해결하면 네 문이 열림
    - 새싹 마을 건물: 학교(교실)·가정집·연구소·도서관·관측소·온실 + 게시판 3곳 + 동물(고양이·강아지·토끼·병아리·오리)
    - 능력: Lv.2 배 타기(물 건너기), Lv.3 헬기(지도에서 클리어한 지역으로 이동)
@@ -280,14 +281,14 @@ const UNITS=[
    summary:['[예시] 식물은 빛을 이용해 스스로 양분을 만든다.','[예시] 물과 흙만 있고 빛이 없으면 식물은 자라지 못한다.'],
    land:{map:'town',x:14,y:6,dir:'down'},
    isOpen:()=>true,isClear:()=>!!state.flags.persuaded},
-  {id:'u3',name:'물리 지역',topic:'북쪽 · 물리 단원 (준비 중)',maps:['physics'],goals:[],summary:[],
-   land:{map:'physics',x:7,y:10,dir:'up'},isOpen:()=>!!state.flags.persuaded,isClear:()=>false},
-  {id:'u4',name:'화학 지역',topic:'남쪽 · 화학 단원 (준비 중)',maps:['chem'],goals:[],summary:[],
-   land:{map:'chem',x:7,y:1,dir:'down'},isOpen:()=>!!state.flags.persuaded,isClear:()=>false},
-  {id:'u5',name:'지구과학 지역',topic:'동쪽 · 지구과학 단원 (준비 중)',maps:['earth'],goals:[],summary:[],
-   land:{map:'earth',x:1,y:6,dir:'right'},isOpen:()=>!!state.flags.persuaded,isClear:()=>false},
-  {id:'u2',name:'생명 지역',topic:'서쪽 · 생명 단원 (준비 중)',maps:['forest'],goals:[],summary:[],
-   land:{map:'forest',x:14,y:4,dir:'left'},
+  {id:'u3',name:'물리 지역',topic:'북쪽 · 물리 (중1~중3 단원 5개)',maps:['physics'],goals:[],summary:[],
+   land:{map:'physics',x:10,y:12,dir:'up'},isOpen:()=>!!state.flags.persuaded,isClear:()=>false},
+  {id:'u4',name:'화학 지역',topic:'남쪽 · 화학 (중1~중3 단원 5개)',maps:['chem'],goals:[],summary:[],
+   land:{map:'chem',x:10,y:1,dir:'down'},isOpen:()=>!!state.flags.persuaded,isClear:()=>false},
+  {id:'u5',name:'지구과학 지역',topic:'동쪽 · 지구과학 (중1~중3 단원 6개)',maps:['earth'],goals:[],summary:[],
+   land:{map:'earth',x:1,y:7,dir:'right'},isOpen:()=>!!state.flags.persuaded,isClear:()=>false},
+  {id:'u2',name:'생명 지역',topic:'서쪽 · 생명과학 (중1~중3 단원 5개)',maps:['forest'],goals:[],summary:[],
+   land:{map:'forest',x:18,y:7,dir:'left'},
    isOpen:()=>!!state.flags.persuaded,isClear:()=>false}
 ];
 
@@ -299,6 +300,7 @@ const NPC_LOOK={
   physguide:{g:'m',hair:0,hc:1,gl:1,out:'c',top:'#d9534f',bottom:'#3a3d49',acc:0},
   chemguide:{g:'f',hair:2,hc:0,gl:1,out:3,acc:0},
   earthguide:{g:'m',hair:2,hc:2,gl:0,out:'c',top:'#3d7fd1',bottom:'#4a4e5c',acc:1,accCol:'#2f7d5b'},
+  lifeguide:{g:'f',hair:0,hc:1,gl:0,out:'c',top:'#2f7d5b',bottom:'#4a3a2a',acc:1,accCol:'#e9c46a'},
   ansun:{g:'m',hair:3,hc:0,gl:0,out:3,acc:0},
   guide:{g:'f',hair:1,hc:1,gl:0,out:'c',top:'#e76f51',bottom:'#4a4a5a',acc:0},
   doubter:{g:'m',hair:1,hc:0,gl:0,out:'c',top:'#8d6cc4',bottom:'#3a3a44',acc:0},
@@ -356,8 +358,8 @@ const MAPS={
       '24,8':{to:'library',x:5,y:6,dir:'up'},'25,8':{to:'library',x:6,y:6,dir:'up'},
       '24,13':{to:'observatory',x:4,y:4,dir:'up'},
       '11,13':{to:'greenhouse',x:4,y:4,dir:'up'},'12,13':{to:'greenhouse',x:5,y:4,dir:'up'},
-      '14,21':{to:'chem',x:7,y:1,dir:'down'},
-      '20,0':{to:'physics',x:7,y:10,dir:'up'},'0,5':{to:'forest',x:14,y:4,dir:'left'},'29,5':{to:'earth',x:1,y:6,dir:'right'}},
+      '14,21':{to:'chem',x:10,y:1,dir:'down'},
+      '20,0':{to:'physics',x:10,y:12,dir:'up'},'0,5':{to:'forest',x:18,y:7,dir:'left'},'29,5':{to:'earth',x:1,y:7,dir:'right'}},
     signs:{'21,1':['「북쪽 길 ↑ 물리 지역」','힘, 전기, 빛과 에너지를 배우는 곳으로 이어진다.'],
       '2,4':['「서쪽 길 ← 생명 지역」','생물과 생명 현상을 배우는 곳으로 이어진다.'],
       '27,4':['「동쪽 길 → 지구과학 지역」','땅, 날씨, 별과 우주를 배우는 곳으로 이어진다.'],
@@ -455,76 +457,110 @@ const MAPS={
         '위쪽 컴퓨터에서는 문제를 풀 수 있어.']})}
     ]},
   physics:{name:'물리 지역',indoor:false,rows:[
-    '################',
-    '#..............#',
-    '#..##....,,....#',
-    '#..##....,,....#',
-    '#.....S........#',
-    '#......=.......#',
-    '#......=.......#',
-    '#.,,...=....##.#',
-    '#.,,...=....##.#',
-    '#......=.......#',
-    '#......=.......#',
-    '#######u########'],
-    warps:{'7,11':{to:'town',x:20,y:1,dir:'down'}},
-    signs:{'6,4':['「물리 지역」','힘의 작용, 운동과 에너지, 전기와 자기, 빛과 파동을 배우는 곳이다.','(단원 내용 준비 중)']},
-    npcs:[{id:'physguide',name:'물리 안내원',x:9,y:5,dir:'down',talk:()=>({lines:['어서 와, {이름}! 여기는 물리 지역이야.','힘과 운동, 전기, 빛에 관한 수수께끼가 이곳에 생길 거야. (준비 중)']})},{id:'pdog',name:'강아지',animal:'dog',x:4,y:9,dir:'right',wander:true,talk:()=>({lines:['멍! (공을 물고 왔다)']})}]},
+    '####################',
+    '#..................#',
+    '#..##..........,,..#',
+    '#..,,..........#...#',
+    '#..................#',
+    '#..................#',
+    '#.M..M..M...M..M...#',
+    '#==================#',
+    '#.S.....S.=....S...#',
+    '#.........=........#',
+    '#.....,,..=..#,....#',
+    '#...#.....=.....,..#',
+    '#........S=........#',
+    '##########u#########'],
+    warps:{'10,13':{to:'town',x:20,y:1,dir:'down'}},
+    stations:{"2,6": {"g": 1, "t": "열", "d": "온도와 열의 이동"}, "5,6": {"g": 1, "t": "힘의 작용", "d": "여러 가지 힘과 그 작용"}, "8,6": {"g": 2, "t": "빛과 파동", "d": "빛과 소리, 파동의 성질"}, "12,6": {"g": 2, "t": "전기와 자기", "d": "전기와 자기 현상"}, "15,6": {"g": 3, "t": "운동과 에너지", "d": "물체의 운동과 에너지"}},
+    signs:{"2,8": ["「중1 구역」", "이 앞부터 중학교 1학년 단원이다."], "8,8": ["「중2 구역」", "이 앞부터 중학교 2학년 단원이다."], "15,8": ["「중3 구역」", "이 앞부터 중학교 3학년 단원이다."], "9,12": ["「물리 지역」", "길을 따라 중1 → 중2 → 중3 순서로 단원 문이 놓여 있다.", "안내원에게 물리에 대해 물어보자."]},
+    npcs:[{id:'physguide',name:'물리 안내원',x:11,y:11,dir:'down',talk:()=>guideTalk('physics')},
+      {id:'pdog',name:'강아지',animal:'dog',x:14,y:11,dir:'left',wander:true,talk:()=>({lines:['멍! (공을 물고 왔다)']})}]},
   chem:{name:'화학 지역',indoor:false,rows:[
-    '#######u########',
-    '#......=.......#',
-    '#.,,...=..##...#',
-    '#.,,...=..##...#',
-    '#......=.......#',
-    '#.....S=.......#',
-    '#..============#',
-    '#..............#',
-    '#..##.....,,...#',
-    '#..##.....,,...#',
-    '#..............#',
-    '################'],
-    warps:{'7,0':{to:'town',x:14,y:20,dir:'up'}},
-    signs:{'6,5':['「화학 지역」','물질의 상태 변화, 물질의 특성과 구성, 화학 반응을 배우는 곳이다.','(단원 내용 준비 중)']},
-    npcs:[{id:'chemguide',name:'화학 안내원',x:9,y:4,dir:'down',talk:()=>({lines:['반가워, {이름}! 여기는 화학 지역이야.','물질이 변하는 신기한 현상들을 여기서 탐구하게 될 거야. (준비 중)']})},{id:'cchick',name:'병아리',animal:'chick',x:12,y:9,dir:'left',wander:true,talk:()=>({lines:['삐약!']})}]},
+    '##########u#########',
+    '#........S=........#',
+    '#..##.....=....,,..#',
+    '#..,,.....=....#...#',
+    '#.........=........#',
+    '#.........=........#',
+    '#.M..M..M.=.M..M...#',
+    '#==================#',
+    '#.S.....S......S...#',
+    '#..................#',
+    '#.....,,.....#,....#',
+    '#...#...........,..#',
+    '#..................#',
+    '####################'],
+    warps:{'10,0':{to:'town',x:14,y:20,dir:'up'}},
+    stations:{"2,6": {"g": 1, "t": "물질의 상태 변화", "d": "고체·액체·기체 사이의 변화"}, "5,6": {"g": 1, "t": "기체의 성질", "d": "기체의 압력·온도·부피 사이의 관계"}, "8,6": {"g": 2, "t": "물질의 특성", "d": "물질을 구별하는 고유한 성질"}, "12,6": {"g": 2, "t": "물질의 구성", "d": "원소, 원자, 분자, 이온"}, "15,6": {"g": 3, "t": "화학 반응의 규칙성", "d": "화학 반응에서 나타나는 규칙"}},
+    signs:{"2,8": ["「중1 구역」", "이 앞부터 중학교 1학년 단원이다."], "8,8": ["「중2 구역」", "이 앞부터 중학교 2학년 단원이다."], "15,8": ["「중3 구역」", "이 앞부터 중학교 3학년 단원이다."], "9,1": ["「화학 지역」", "길을 따라 중1 → 중2 → 중3 순서로 단원 문이 놓여 있다.", "안내원에게 화학에 대해 물어보자."]},
+    npcs:[{id:'chemguide',name:'화학 안내원',x:11,y:2,dir:'down',talk:()=>guideTalk('chem')},
+      {id:'cchick',name:'병아리',animal:'chick',x:14,y:11,dir:'left',wander:true,talk:()=>({lines:['삐약!']})}]},
   earth:{name:'지구과학 지역',indoor:false,rows:[
-    '################',
-    '#..............#',
-    '#...##....,,...#',
-    '#...##....,,...#',
-    '#..............#',
-    '#........S.....#',
-    'u============..#',
-    '#..............#',
-    '#.,,.....##....#',
-    '#.,,.....##....#',
-    '#..............#',
-    '################'],
-    warps:{'0,6':{to:'town',x:28,y:5,dir:'left'}},
-    signs:{'9,5':['「지구과학 지역」','지권의 변화, 날씨와 기후, 태양계, 별과 우주를 배우는 곳이다.','(단원 내용 준비 중)']},
-    npcs:[{id:'earthguide',name:'지구과학 안내원',x:7,y:4,dir:'down',talk:()=>({lines:['안녕, {이름}! 여기는 지구과학 지역이야.','땅과 하늘, 우주의 비밀을 풀 곳이지. (준비 중)']})},{id:'ecat',name:'고양이',animal:'cat',x:12,y:9,dir:'left',wander:true,talk:()=>({lines:['야옹? (별을 올려다본다)']})}]},
-  forest:{name:'생명 지역 · 서쪽 숲',indoor:false,rows:[
-    '################',
-    '#.....=........#',
-    '#.,,..=...##...#',
-    '#.,,..=...##.,.#',
-    '#.....=========u',
-    '#..##.......=..#',
-    '#..##..S....=..#',
-    '#,,,........=,,#',
-    '#~~~~~~~~~..=,,#',
-    '#~~~~~~~~~..=..#',
-    '#~~~..~~~~.....#',
-    '#~~~.$~~~~.....#',
-    '#~~~~~~~~~.....#',
-    '################'],
-    warps:{'15,4':{to:'town',x:1,y:5,dir:'right'}},
-    signs:{'7,6':['「생명 지역」','생물의 구성과 다양성, 동물과 에너지, 생식과 유전을 배우는 곳이다.','(단원 내용 준비 중)']},
-    npcs:[
-      {id:'frabbit',name:'토끼',animal:'rabbit',x:13,y:3,dir:'left',wander:true,talk:()=>({lines:['(토끼가 풀을 오물오물 먹고 있다)']})},
-      {id:'fduck',name:'오리',animal:'duck',x:7,y:9,dir:'left',talk:()=>({lines:['꽥!']})},
-      {id:'traveler',name:'나그네',x:10,y:9,dir:'left',talk:()=>({lines:['여기는 생명 지역이야. 생명 단원 내용이 들어올 자리지.','저 호수 가운데 섬에 상자가 보이지? 배가 있으면 건너갈 수 있을 텐데.']})}
-    ]}
+    '####################',
+    '#..................#',
+    '#..##..........,,..#',
+    '#..,,..........#...#',
+    '#..................#',
+    '#..................#',
+    '#.M..M..M..M..M..M.#',
+    'u==================#',
+    '#SS..S.....S.......#',
+    '#..................#',
+    '#.....,,.....#,....#',
+    '#...#...........,..#',
+    '#..................#',
+    '####################'],
+    warps:{'0,7':{to:'town',x:28,y:5,dir:'left'}},
+    stations:{"2,6": {"g": 1, "t": "태양계", "d": "태양과 행성, 지구와 달"}, "5,6": {"g": 2, "t": "지권의 변화", "d": "암석과 지각의 변화"}, "8,6": {"g": 2, "t": "별과 우주", "d": "별의 특성과 우주"}, "11,6": {"g": 3, "t": "날씨와 기후변화", "d": "대기와 날씨, 기후 변화"}, "14,6": {"g": 3, "t": "수권과 해수의 순환", "d": "지구의 물과 바다의 순환"}, "17,6": {"g": 3, "t": "재해·재난과 안전", "d": "자연재해·재난과 대처"}},
+    signs:{"2,8": ["「중1 구역」", "이 앞부터 중학교 1학년 단원이다."], "5,8": ["「중2 구역」", "이 앞부터 중학교 2학년 단원이다."], "11,8": ["「중3 구역」", "이 앞부터 중학교 3학년 단원이다."], "1,8": ["「지구과학 지역」", "길을 따라 중1 → 중2 → 중3 순서로 단원 문이 놓여 있다.", "안내원에게 지구과학에 대해 물어보자."]},
+    npcs:[{id:'earthguide',name:'지구과학 안내원',x:1,y:6,dir:'down',talk:()=>guideTalk('earth')},
+      {id:'ecat',name:'고양이',animal:'cat',x:16,y:11,dir:'left',wander:true,talk:()=>({lines:['야옹? (별을 올려다본다)']})}]},
+  forest:{name:'생명 지역',indoor:false,rows:[
+    '####################',
+    '#..................#',
+    '#..##..........,,..#',
+    '#..,,..........#...#',
+    '#..................#',
+    '#..................#',
+    '#..M..M..M...M..M..#',
+    '#==================u',
+    '#.....S......S..S.S#',
+    '#.~~~~~~~..........#',
+    '#.~~~..~~....#,....#',
+    '#.~~~$~~~..,....,..#',
+    '#.~~~~~~~..........#',
+    '####################'],
+    warps:{'19,7':{to:'town',x:1,y:5,dir:'right'}},
+    stations:{"16,6": {"g": 1, "t": "생물의 구성과 다양성", "d": "세포와 생물의 다양성·분류"}, "13,6": {"g": 2, "t": "식물과 에너지", "d": "광합성과 식물의 에너지"}, "9,6": {"g": 2, "t": "동물과 에너지", "d": "소화·순환·호흡·배설"}, "6,6": {"g": 3, "t": "자극과 반응", "d": "감각 기관과 신경계·호르몬"}, "3,6": {"g": 3, "t": "생식과 유전", "d": "세포 분열, 생식과 유전"}},
+    signs:{"16,8": ["「중1 구역」", "이 앞부터 중학교 1학년 단원이다."], "13,8": ["「중2 구역」", "이 앞부터 중학교 2학년 단원이다."], "6,8": ["「중3 구역」", "이 앞부터 중학교 3학년 단원이다."], "18,8": ["「생명 지역」", "길을 따라 중1 → 중2 → 중3 순서로 단원 문이 놓여 있다.", "안내원에게 생명과학에 대해 물어보자."]},
+    npcs:[{id:'lifeguide',name:'생명과학 안내원',x:18,y:6,dir:'down',talk:()=>guideTalk('forest')},
+      {id:'frabbit',name:'토끼',animal:'rabbit',x:12,y:10,dir:'left',wander:true,talk:()=>({lines:['(토끼가 풀을 오물오물 먹고 있다)']})},
+      {id:'fduck',name:'오리',animal:'duck',x:3,y:10,dir:'left',talk:()=>({lines:['꽥!','(호수 가운데 섬에 상자가 보인다. 배가 있으면 건널 수 있을 것 같다)']})}]}
 };
+
+/* 과목 안내원 */
+const DOMAIN_INFO={
+  physics:{n:'물리',what:['물리학은 물체의 운동과 힘, 에너지, 열, 빛과 소리, 전기와 자기처럼 자연의 기본 원리를 탐구하는 과학이야.','세상이 어떻게 움직이고 에너지가 어떻게 전달되는지를 밝혀내지.'],
+    sub:['물리에는 여러 세부 분야가 있어.','힘과 운동을 다루는 「역학」, 열과 에너지를 다루는 「열역학」,','빛과 소리 같은 「파동」, 전기와 자기를 다루는 「전자기학」 등이 있지.']},
+  chem:{n:'화학',what:['화학은 물질이 무엇으로 이루어져 있는지, 어떤 성질을 가지는지, 어떻게 변하는지를 탐구하는 과학이야.','우리가 먹고, 입고, 쓰는 거의 모든 것이 화학과 관련 있지.'],
+    sub:['화학에서는 이런 것들을 공부해.','물질을 이루는 원자와 분자 같은 「물질의 구성」,','고체·액체·기체처럼 「물질의 상태와 성질」,','그리고 물질이 새로운 물질로 바뀌는 「화학 반응」이야.']},
+  earth:{n:'지구과학',what:['지구과학은 우리가 사는 지구와, 지구를 둘러싼 우주를 탐구하는 과학이야.','땅, 바다, 하늘, 그리고 별까지 모두 지구과학의 무대지.'],
+    sub:['지구과학에는 여러 세부 분야가 있어.','땅과 암석을 다루는 「지질학」, 공기와 날씨를 다루는 「대기과학」,','바다를 다루는 「해양학」, 별과 우주를 다루는 「천문학」이 있지.']},
+  forest:{n:'생명과학',what:['생명과학은 생물의 구조와 기능, 그리고 여러 생명 현상을 탐구하는 과학이야.','작은 세포부터 사람, 동물, 식물까지 살아 있는 모든 것이 대상이지.'],
+    sub:['생명과학에서는 이런 것들을 공부해.','생물을 이루는 「세포」와 생물의 「다양성·분류」,','식물과 동물이 「에너지」를 얻는 방법, 「자극과 반응」,','그리고 생명이 이어지는 「생식과 유전」이야.']}
+};
+function guideTalk(key){
+  const D=DOMAIN_INFO[key],m=MAPS[key];
+  const units=Object.values(m.stations||{});
+  return {lines:[`어서 와, {이름}! 여기는 ${D.n} 지역이야.`,'무엇이 궁금하니?'],
+    choice:{labels:[`${D.n}${((D.n.charCodeAt(D.n.length-1)-0xAC00)%28)?'이':'가'} 뭐예요?`,'세부 분야가 궁금해요','어떤 단원이 있어요?','괜찮아요'],on:[
+      ()=>say(D.what,{name:m.npcs[0].name,after:()=>queue.push(()=>{const r=guideTalk(key);say(['또 궁금한 거 있니?'],{name:m.npcs[0].name,choice:r.choice})})}),
+      ()=>say(D.sub,{name:m.npcs[0].name,after:()=>queue.push(()=>{const r=guideTalk(key);say(['또 궁금한 거 있니?'],{name:m.npcs[0].name,choice:r.choice})})}),
+      ()=>say(['이 길을 따라가면 중1 → 중2 → 중3 순서로 단원 문이 있어.',...[1,2,3].map(g=>{const t=units.filter(u=>u.g===g).map(u=>'「'+u.t+'」');return t.length?`중${g}: ${t.join(', ')}`:null}).filter(Boolean),'가까운 문부터 차례로 둘러봐!'],
+        {name:m.npcs[0].name,after:()=>queue.push(()=>{const r=guideTalk(key);say(['또 궁금한 거 있니?'],{name:m.npcs[0].name,choice:r.choice})})}),
+      ()=>say(['좋아, 즐겁게 탐험해!'],{name:m.npcs[0].name})]}};
+}
 
 /* 튜토리얼: 안선생 */
 function ansunTalk(){
@@ -628,6 +664,11 @@ function paintTile(g,ch,indoor,variant){
       r(g,2,4,7,1,'#e8efe8');r(g,3,7,10,1,'#cfe0d2');r(g,2,10,5,1,'#cfe0d2');r(g,11,10,2,1,'#f2e6a0');break;
     case '$':pGrass(g);r(g,2,5,12,9,'#8a5a2b');r(g,2,5,12,3,'#b07a3c');r(g,2,8,12,1,'#5a3a1a');r(g,7,7,2,3,'#f2c94c');break;
     case 'o':pGrass(g);r(g,2,5,12,9,'#8a5a2b');r(g,2,5,12,2,'#5a3a1a');r(g,3,7,10,6,'#3a2412');break;
+    case 'M':{pGrass(g);const col={g1:'#4caf50',g2:'#3d7fd1',g3:'#8d6cc4'}[variant]||'#4caf50';
+      r(g,3,5,10,9,'#f3ead2');r(g,3,13,10,1,'#c9bb98');
+      r(g,1,3,14,2,col);r(g,3,1,10,2,col);r(g,5,0,6,1,col);r(g,2,5,12,1,'rgba(0,0,0,.25)');
+      r(g,6,7,4,7,'#8a5a34');r(g,7,8,2,5,'#a87445');r(g,8,10,1,1,'#f2c94c');
+      r(g,7,1,2,2,'#ffffff');r(g,2,14,12,2,'#b9ad97');break;}
     case 'g':pPath(g);for(let i=0;i<4;i++)r(g,1+i*4,1,2,14,'#5c6370');r(g,0,3,16,2,'#4a505a');r(g,0,11,16,2,'#4a505a');r(g,5,6,6,4,'#f2c94c');r(g,6,7,4,2,'#34304a');break;
     case 'C':r(g,0,0,16,16,'#41589c');for(let y=3;y<16;y+=4)r(g,0,y,16,1,'#33467e');r(g,(variant.length%2)?3:9,1,3,1,'#5a72b8');break;
     case 'c':r(g,0,0,16,16,'#f3ead2');r(g,0,14,16,2,'#c9bb98');if(variant==='w'){r(g,3,3,10,8,'#5b4a3a');r(g,4,4,8,6,'#a9dcf0');r(g,7,4,2,6,'#5b4a3a');r(g,4,6,8,1,'#5b4a3a')}break;
@@ -663,6 +704,7 @@ function drawTileAt(ch,tx,ty,sx,sy,now,indoor){
   if(ch==='~'){const o=(Math.floor(now/500)+tx+ty)%2;r(ctx,sx,sy,16,16,'#4a8fe0');r(ctx,sx+2+o*2,sy+4,5,1,'#8cc4f5');r(ctx,sx+8-o*2,sy+11,5,1,'#8cc4f5');return}
   let variant='';
   if(ch==='H'&&tx%3===1)variant='w';
+  if(ch==='M'){const st=map.stations&&map.stations[tx+','+ty];variant='g'+(st?st.g:1)}
   if('lcyvw'.includes(ch)&&tx%2===1)variant='w';
   if(ch==='L'&&tx%4===1)variant='s';
   if(ch==='V'){const V=(a,b)=>tileAt(a,b)==='V';
@@ -895,7 +937,7 @@ function loadMap(id,x,y,dir){
   if(started){showBanner(map.name);updateHUD()}
 }
 function tileAt(x,y){if(y<0||y>=map.rows.length||x<0||x>=map.rows[0].length)return '#';return map.rows[y][x]}
-const SOLID=new Set('#RH~FBTXQSK$CcJLlAYyZVvWwP*%g'.split(''));
+const SOLID=new Set('#RH~FBTXQSK$CcJLlAYyZVvWwP*%gM'.split(''));
 function isLocked(x,y){return !!(map.locked&&map.locked[x+','+y]&&!state.flags[map.lockFlag])}
 function passable(x,y,self){
   const c=tileAt(x,y);
@@ -1007,6 +1049,7 @@ const panelsEl=document.getElementById('panels');
 function pushLayer(L){layers.push(L);if(L.el&&!L.el.parentNode)panelsEl.appendChild(L.el)}
 function close(L){
   const i=layers.indexOf(L);if(i>=0)layers.splice(i,1);
+  if(L===DLGL){dlgEl.classList.remove('show');choiceEl.classList.remove('show')}
   if(L.el&&L.el.parentNode===panelsEl)L.el.remove();
   L.onClose&&L.onClose();
 }
@@ -1077,8 +1120,9 @@ function updateDlg(dt){
 function endDlg(){dlgEl.classList.remove('show');choiceEl.classList.remove('show');close(DLGL)}
 function dlgKey(a){
   if(atChoice()){
-    if(a==='up'||a==='down'){DLG.ci=1-DLG.ci;renderDlg();return}
-    if(a==='ok'||a==='cancel'){const pick=a==='cancel'?1:DLG.ci,f=DLG.opts.choice.on[pick];endDlg();f&&f()}
+    const nC=DLG.opts.choice.labels.length;
+    if(a==='up'||a==='down'){DLG.ci=(DLG.ci+(a==='up'?-1:1)+nC)%nC;renderDlg();return}
+    if(a==='ok'||a==='cancel'){const pick=a==='cancel'?nC-1:DLG.ci,f=DLG.opts.choice.on[pick];endDlg();f&&f()}
     return;
   }
   if(a==='cancel'){
@@ -1168,6 +1212,10 @@ function interact(){
     case '*':say(['망원경으로 밤하늘을 들여다보았다. 별이 반짝반짝 빛난다!','(다음 단원 「별과 우주」에서 쓰일 예정)']);return;
     case '%':say(['유리 지붕으로 들어온 햇빛을 받아 잎이 초록색으로 싱싱하다.']);return;
     case 'G':if(!isOpenGate())say(['굳게 잠긴 문이다.','마을 문제가 해결되면 열릴 것 같다.']);return;
+    case 'M':{const st=map.stations&&map.stations[key];if(!st)return;
+      const lines=[`[중${st.g}] 「${st.t}」 단원의 문`,`배우는 내용: ${st.d}`];
+      if(st.t==='식물과 에너지')lines.push('지금은 새싹 마을에서 예시로 체험해 볼 수 있다.');
+      lines.push('(이 문 너머의 단원은 아직 준비 중이다.)');say(lines);return;}
     case 'g':say(['길이 막혀 있다.','다음 단원 지역으로 이어지는 길이다. (준비 중)']);return;
     case '~':
       if(player.onBoat)return;
