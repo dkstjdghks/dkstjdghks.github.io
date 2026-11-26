@@ -129,6 +129,24 @@ canvas.ava.big{width:108px;height:132px}
 .fb{font-size:14px;margin-top:6px;padding:6px 8px;border-radius:6px}
 .fb.ok{background:#d8f3dc;color:#2d6a4f}.fb.no{background:#fde2e1;color:#b03a2e}
 
+/* 이름 짓기 */
+.nmbox{font-size:24px;font-weight:800;letter-spacing:2px;text-align:center;background:#fff;border:2px solid #34304a;border-radius:8px;padding:6px 10px;margin:8px 0 10px;min-height:1.8em}
+.nmbox .caret{color:#e0503f;animation:blink .8s infinite}
+.kgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.kc{display:flex;align-items:center;justify-content:center;height:38px;border-radius:7px;background:#eeeaf6;font-size:18px;font-weight:700;cursor:pointer}
+.kc.v{background:#e8f3ec}
+.kc.ctl{font-size:12px;background:#34304a;color:#fff}
+.kc.cur{outline:3px solid #e0503f;outline-offset:-1px}
+.ksep{grid-column:1/-1;height:2px;background:#ddd;margin:2px 0}
+.gpick{display:flex;justify-content:center;gap:22px;margin:10px 0 2px}
+.gpick div{text-align:center;font-size:13px;color:#5b5770}
+/* 지도 */
+#wmap{width:100%;height:auto;image-rendering:pixelated;border:3px solid #34304a;border-radius:8px;display:block;background:#4a8fe0}
+/* 헬기 */
+#heli{position:absolute;top:30%;left:-20%;font-size:calc(var(--fs)*3.2);pointer-events:none;z-index:4;display:none}
+#heli.go{display:block;animation:heli 1.3s ease-in-out forwards}
+@keyframes heli{0%{left:-20%;transform:translateY(0)}50%{transform:translateY(-14px)}100%{left:110%;transform:translateY(0)}}
+
 /* 컨트롤러 */
 #pad{display:none;position:relative;flex:none;height:var(--pad-h,240px);padding-bottom:env(safe-area-inset-bottom);touch-action:none;background:linear-gradient(#1d1c25,#16151c)}
 body.touch #pad{display:block}
@@ -165,6 +183,7 @@ body.touch.land #bM{left:auto;right:22px;top:14px;transform:none}
       <div id="banner"></div>
       <div id="toast"></div>
       <div id="xpPop"></div>
+      <div id="heli">🚁</div>
       <div id="dlg"><div id="dlgName"></div><div id="dlgText"></div><div id="choice"></div></div>
     </div>
     <div id="panels"></div>
@@ -187,7 +206,8 @@ body.touch.land #bM{left:auto;right:22px;top:14px;transform:none}
    - 컴퓨터: 방향키 이동, A 확인, S 취소, 엔터 메뉴
    - 캐릭터: 남/여 교복, 머리·머리색·안경·옷·소품 선택. 레벨이 오르면 코디템이 열림
    - 저장: 이 기기 브라우저에만 저장 (이름·학번 등 개인정보는 받지 않음)
-   - 시작하면 교실에서 안선생 NPC가 튜토리얼 진행 (건너뛰기 가능)
+   - 시작: 성별 고르기(고정) → 이름(별명) 짓기 → 꾸미기 → 교실 튜토리얼(안선생, 건너뛰기 가능)
+   - 능력: Lv.2 배 타기(물 건너기), Lv.3 헬기(지도에서 클리어한 지역으로 이동)
    - 대사·문제·단서는 CONTENT / MAPS / UNITS 안의 [예시]. 나중에 실제 내용으로 교체
    ===================================================================== */
 const T=16;
@@ -207,6 +227,9 @@ const OUTFITS=[{n:'동복 교복'},{n:'하복 교복'},{n:'체육복',lv:2},{n:'
 const ACCS=[{n:'없음'},{n:'야구 모자',lv:2},{n:'비니',lv:3},{n:'헤드폰',lv:5}];
 const GLS=[{n:'안 씀'},{n:'안경'}];
 const OPT={g:[{n:'남학생'},{n:'여학생'}],hc:HC,gl:GLS,out:OUTFITS,acc:ACCS};
+const ABILITIES=[{lv:2,id:'boat',n:'🚤 배 타기',d:'물을 바라보고 확인 버튼을 누르면 배를 타고 건널 수 있다'},
+                 {lv:3,id:'heli',n:'🚁 헬기',d:'MENU → 지도에서 클리어한 지역으로 바로 날아갈 수 있다'}];
+function hasAbility(id){const a=ABILITIES.find(x=>x.id===id);return !!a&&level()>=a.lv}
 function level(){let l=1;LV_XP.forEach((v,i)=>{if(state.xp>=v)l=i+1});return l}
 function optList(k,look){return k==='hair'?HAIRS[look.g]:OPT[k]}
 function getIdx(k,look){return k==='g'?(look.g==='m'?0:1):look[k]}
@@ -223,9 +246,11 @@ function unlockNames(lv){
   ACCS.forEach(o=>o.lv===lv&&r.push(o.n));
   return r;
 }
+function abilityNames(lv){return ABILITIES.filter(a=>a.lv===lv).map(a=>a.n)}
 
 /* ---------- 콘텐츠 (예시) ---------- */
 const CONTENT={
+  treasure:{xp:10,text:'섬 위의 상자에서 「다음 단원 탐험 지도 조각」을 찾았다!'},
   clues:{
     t0:{unit:'u0',name:'탐험 규칙',text:'관찰하고, 기록하고, 증거로 말하기!',xp:10},
     c1:{unit:'u1',name:'식물 도감 한 쪽',text:'[예시] 식물은 잎에서 빛을 이용해 스스로 양분을 만든다.'},
@@ -243,18 +268,21 @@ const UNITS=[
   {id:'u0',name:'교실',topic:'튜토리얼 · 게임 방법 익히기',maps:['classroom'],
    goals:[{id:'tutStarted',text:'안선생님께 설명 듣기'},{id:'t0',text:'칠판 조사하기'},{id:'tutorial',text:'설명을 끝까지 듣고 교실 나가기'}],
    summary:['이동은 방향키, 조사·대화는 ○(A), 취소는 ✕(S), 메뉴는 MENU(Enter)','단서를 모아 잘못 알고 있는 사람을 설득하면 다음 지역이 열린다.'],
+   land:{map:'classroom',x:4,y:6,dir:'up'},
    isOpen:()=>true,isClear:()=>!!state.flags.tutorial},
   {id:'u1',name:'새싹 마을',topic:'식물과 에너지 (예시)',maps:['town','lab','library'],
    goals:[{id:'c1',text:'자료실 책장 조사하기'},{id:'c2',text:'자료실 컴퓨터 문제 풀기'},{id:'c3',text:'실험실에서 식물을 끝까지 키우기'},{id:'persuaded',text:'고집쟁이 주민 설득하기'}],
    summary:['[예시] 식물은 빛을 이용해 스스로 양분을 만든다.','[예시] 물과 흙만 있고 빛이 없으면 식물은 자라지 못한다.'],
+   land:{map:'town',x:7,y:7,dir:'down'},
    isOpen:()=>true,isClear:()=>!!state.flags.persuaded},
   {id:'u2',name:'남쪽 숲길',topic:'다음 단원 (준비 중)',maps:['forest'],goals:[],summary:[],
+   land:{map:'forest',x:6,y:1,dir:'down'},
    isOpen:()=>!!state.flags.persuaded,isClear:()=>false}
 ];
 
 /* ---------- NPC 모습 ---------- */
 const NPC_LOOK={
-  ansun:{g:'m',hair:0,hc:0,gl:1,out:'c',top:'#dfe8f2',bottom:'#3d4250',tieCol:'#2e3a66',acc:0},
+  ansun:{g:'m',hair:3,hc:0,gl:1,out:3,acc:0},
   guide:{g:'f',hair:1,hc:1,gl:0,out:'c',top:'#e76f51',bottom:'#4a4a5a',acc:0},
   doubter:{g:'m',hair:1,hc:0,gl:0,out:'c',top:'#8d6cc4',bottom:'#3a3a44',acc:0},
   guard:{g:'m',hair:2,hc:0,gl:0,out:'c',top:'#3d5a80',bottom:'#2b2d42',acc:1,accCol:'#3d5a80'},
@@ -304,7 +332,7 @@ const MAPS={
     signs:{'9,4':['「새싹 마을」','← 왼쪽 집: 실험실   /   오른쪽 집: 자료실 →','남쪽 문은 마을 문제가 해결되면 열린다.']},
     npcs:[
       {id:'guide',name:'마을 안내원',x:3,y:6,dir:'down',talk:()=>({lines:[
-        '안녕! 여기는 새싹 마을이야.',
+        '안녕, {이름}! 여기는 새싹 마을이야.',
         '울타리 안의 주민이 "식물은 흙을 먹고 자란다"고 우기고 있어.',
         '실험실과 자료실에서 증거(단서)를 모아서 설득해 볼래?',
         'MENU를 누르면 학습 노트에서 다음 할 일을 볼 수 있어.']})},
@@ -355,22 +383,24 @@ const MAPS={
     '#..##.......=..#',
     '#..##..S....=..#',
     '#,,,........=,,#',
-    '#,,,..~~~...=,,#',
-    '#.....~~~...=..#',
-    '#..............#',
+    '#~~~~~~~~~..=,,#',
+    '#~~~~~~~~~..=..#',
+    '#~~~..~~~~.....#',
+    '#~~~.$~~~~.....#',
+    '#~~~~~~~~~.....#',
     '################'],
     warps:{'6,0':{to:'town',x:10,y:14,dir:'up'}},
     signs:{'7,6':['「이 앞은 다음 단원 지역」','(아직 준비 중)']},
     npcs:[
-      {id:'traveler',name:'나그네',x:10,y:9,dir:'left',talk:()=>({lines:['여기는 다음 단원 지역이 들어올 자리야.','(맵 사이를 오가는 기능 확인용 예시 맵)']})}
+      {id:'traveler',name:'나그네',x:10,y:9,dir:'left',talk:()=>({lines:['여기는 다음 단원 지역이 들어올 자리야.','저 호수 가운데 섬에 상자가 보이지? 배가 있으면 건너갈 수 있을 텐데.']})}
     ]}
 };
 
 /* 튜토리얼: 안선생 */
 function ansunTalk(){
   const f=state.flags;
-  if(f.tutorial)return {lines:['새싹 마을 사람들이 기다리고 있어. 아래쪽 문으로 나가 보자!','모르는 게 생기면 MENU의 학습 노트를 열어 봐.']};
-  if(!f.tutStarted)return {lines:['안녕! 나는 안선생이야. 너희의 과학 탐험을 도와줄 선생님이지.','처음이니까 게임 방법을 간단히 알려 줄까?'],
+  if(f.tutorial)return {lines:['{이름}, 새싹 마을 사람들이 기다리고 있어. 아래쪽 문으로 나가 보자!','모르는 게 생기면 MENU의 학습 노트를 열어 봐.']};
+  if(!f.tutStarted)return {lines:['안녕, {이름}! 나는 안선생이야. 너희의 과학 탐험을 도와줄 선생님이지.','처음이니까 게임 방법을 간단히 알려 줄까?'],
     choice:{labels:['네, 알려 주세요','괜찮아요 (건너뛰기)'],on:[()=>{
       f.tutStarted=true;save();updateHUD();
       say(['좋아! 먼저 걸어 보자.',
@@ -388,6 +418,7 @@ function ansunTalk(){
     '사람들과 이야기하고, 물건을 조사하고, 실험도 해서 단서를 모아 봐.',
     '단서가 다 모이면 잘못 알고 있는 사람을 증거로 설득할 수 있어. 그러면 다음 지역으로 가는 길이 열려.',
     '레벨이 오르면 새 옷과 소품이 생겨. 옷장에서 갈아입을 수 있지.',
+    '레벨이 더 오르면 물을 건너는 배와, 클리어한 곳으로 날아가는 헬기도 탈 수 있어!',
     (isTouch?'MENU 버튼':'Enter 키')+'을 누르면 학습 노트, 배운 내용, 옷장을 볼 수 있어. 다음에 뭘 해야 할지 모르겠으면 학습 노트를 봐.',
     '질문에 답할 때는 ▲▼로 고르고 '+(isTouch?'○':'A')+'로 정해. '+(isTouch?'✕ 버튼':'S 키')+'는 취소, 또는 「아니요」야.',
     '자, 잘 이해했니?'],
@@ -407,7 +438,7 @@ function doubterTalk(){
     choice:{labels:['증거를 보여 준다','아니요'],on:[()=>{
       const n=unitFound('u1');
       if(n>=3){
-        say(['(단서 노트의 증거 3개를 보여 주었다.)','...흙과 물이 있어도 빛이 없으면 자라지 않았다고?','내가 틀렸네. 고마워! 남쪽 문을 열어 줄게.'],{name:'고집쟁이 주민',after:()=>{
+        say(['(단서 노트의 증거 3개를 보여 주었다.)','...흙과 물이 있어도 빛이 없으면 자라지 않았다고?','내가 틀렸네. 고마워, {이름}! 남쪽 문을 열어 줄게.'],{name:'고집쟁이 주민',after:()=>{
           state.flags.persuaded=true;save();toast('남쪽 문이 열렸다!');gainXP(40);
         }});
       }else{
@@ -418,7 +449,7 @@ function doubterTalk(){
 
 /* ---------- 상태·저장 ---------- */
 function newExp(){return{day:0,height:0,health:100,light:2,water:1,log:[]}}
-function freshState(){return{v:3,map:'classroom',x:4,y:6,dir:'up',flags:{},clues:{},talked:{},xp:0,
+function freshState(){return{v:4,name:'',onBoat:false,map:'classroom',x:4,y:6,dir:'up',flags:{},clues:{},talked:{},xp:0,
   look:{g:'m',hair:0,hc:0,gl:0,out:0,acc:0},exp:newExp()}}
 let state=freshState();
 let started=false;
@@ -465,6 +496,8 @@ function paintTile(g,ch,indoor,variant){
     case 'Q':pTable(g);r(g,4,1,8,8,'#333');r(g,5,2,6,5,'#5fd3e0');r(g,6,3,3,1,'#fff');r(g,7,9,2,2,'#333');r(g,3,11,10,1,'#555');break;
     case 'K':r(g,0,0,16,16,'#cdbfa6');r(g,0,1,16,13,'#7a5a3a');r(g,0,2,16,11,'#2f5d46');r(g,0,13,16,1,'#a88a5e');
       r(g,2,4,7,1,'#e8efe8');r(g,3,7,10,1,'#cfe0d2');r(g,2,10,5,1,'#cfe0d2');r(g,11,10,2,1,'#f2e6a0');break;
+    case '$':pGrass(g);r(g,2,5,12,9,'#8a5a2b');r(g,2,5,12,3,'#b07a3c');r(g,2,8,12,1,'#5a3a1a');r(g,7,7,2,3,'#f2c94c');break;
+    case 'o':pGrass(g);r(g,2,5,12,9,'#8a5a2b');r(g,2,5,12,2,'#5a3a1a');r(g,3,7,10,6,'#3a2412');break;
     case 'd':pFloor(g);r(g,2,2,12,12,'#b94a48');r(g,3,3,10,10,'#d0605c');break;
     default:r(g,0,0,16,16,'#000');
   }
@@ -475,6 +508,7 @@ function drawTileAt(ch,tx,ty,sx,sy,now,indoor){
   if(ch==='~'){const o=(Math.floor(now/500)+tx+ty)%2;r(ctx,sx,sy,16,16,'#4a8fe0');r(ctx,sx+2+o*2,sy+4,5,1,'#8cc4f5');r(ctx,sx+8-o*2,sy+11,5,1,'#8cc4f5');return}
   let variant='';
   if(ch==='H'&&tx%3===1)variant='w';
+  if(ch==='$'&&state.flags.treasure)ch='o';
   if(ch==='G')variant=isOpenGate()?'open':'shut';
   const key=ch+(indoor?'i':'o')+variant;
   let c=tileCache[key];
@@ -654,6 +688,7 @@ function mkEnt(x,y,dir){return{x,y,px:x*T,py:y*T,dir,moving:false,t:0,tx:x,ty:y,
 function loadMap(id,x,y,dir){
   mapId=id;map=MAPS[id];
   player=mkEnt(x,y,dir);player.isPlayer=true;player.speed=0.17;
+  player.onBoat=!!state.onBoat&&MAPS[id].rows[y][x]==='~';state.onBoat=player.onBoat;
   entities=[player];
   for(const n of map.npcs||[]){
     const e=mkEnt(n.x,n.y,n.dir);
@@ -666,11 +701,12 @@ function loadMap(id,x,y,dir){
   if(started){showBanner(map.name);updateHUD()}
 }
 function tileAt(x,y){if(y<0||y>=map.rows.length||x<0||x>=map.rows[0].length)return '#';return map.rows[y][x]}
-const SOLID=new Set('#RH~FBTXQSK'.split(''));
+const SOLID=new Set('#RH~FBTXQSK$'.split(''));
 function isLocked(x,y){return !!(map.locked&&map.locked[x+','+y]&&!state.flags[map.lockFlag])}
 function passable(x,y,self){
   const c=tileAt(x,y);
-  if(SOLID.has(c))return false;
+  const boatOK=c==='~'&&self.isPlayer&&self.onBoat;
+  if(SOLID.has(c)&&!boatOK)return false;
   if(c==='G'&&!isOpenGate())return false;
   if(isLocked(x,y))return false;
   if(!self.isPlayer&&(c==='G'||c==='u'||(map.warps&&map.warps[x+','+y])))return false;
@@ -696,6 +732,8 @@ function updateEnt(e,dt){
 }
 function frameOf(e){return e.moving&&e.t<0.5?(e.steps%2?1:2):0}
 function onArrive(){
+  if(player.onBoat&&tileAt(player.x,player.y)!=='~'){player.onBoat=false;toast('배에서 내렸다')}
+  state.onBoat=player.onBoat;
   state.x=player.x;state.y=player.y;state.dir=player.dir;save();
   const w=map.warps&&map.warps[player.x+','+player.y];
   if(w)fadeTo(()=>loadMap(w.to,w.x,w.y,w.dir));
@@ -818,7 +856,8 @@ const DLGL={el:null,onKey:a=>dlgKey(a)};
 function say(lines,opts){
   opts=opts||{};
   if(!lines||!lines.length){opts.after&&opts.after();return}
-  DLG.pages=lines;DLG.i=0;DLG.shown=0;DLG.opts=opts;DLG.ci=0;
+  const nm=state.name||'탐험가';
+  DLG.pages=lines.map(l=>String(l).replace(/\{이름\}/g,nm));DLG.i=0;DLG.shown=0;DLG.opts=opts;DLG.ci=0;
   dlgName.textContent=opts.name||'';
   dlgEl.classList.add('show');
   if(!layers.includes(DLGL))pushLayer(DLGL);
@@ -881,10 +920,11 @@ function gainXP(n){
   const after=level();
   xpPop('+'+n+' XP');updateHUD();save();
   for(let l=before+1;l<=after;l++){
-    const items=unlockNames(l);
-    queue.push(()=>say([`레벨 업! Lv.${l} 「${TITLES[l-1]}」가 되었다!`,
-      items.length?`새 코디템이 열렸다: ${items.join(', ')}`:'새 칭호를 얻었다!',
-      'MENU → 옷장에서 바꿔 입을 수 있다.'],{name:'알림'}));
+    const items=unlockNames(l),ab=ABILITIES.filter(a=>a.lv===l);
+    const lines=[`레벨 업! Lv.${l} 「${TITLES[l-1]}」가 되었다!`];
+    if(items.length)lines.push(`새 코디템이 열렸다: ${items.join(', ')}`,'MENU → 옷장에서 바꿔 입을 수 있다.');
+    ab.forEach(a=>lines.push(`새 능력! ${a.n}`,a.d+'.'));
+    queue.push(()=>say(lines,{name:'알림'}));
   }
 }
 function giveClue(id){
@@ -928,16 +968,26 @@ function interact(){
       return;
     case 'T':say(['깨끗한 책상이다.']);return;
     case 'G':if(!isOpenGate())say(['굳게 잠긴 문이다.','마을 문제가 해결되면 열릴 것 같다.']);return;
-    case '~':say(['맑은 연못이다.']);return;
+    case '~':
+      if(player.onBoat)return;
+      if(hasAbility('boat'))say(['물이 깊다.','🚤 배를 타고 건너갈까?'],{choice:{labels:['배를 탄다','그만둔다'],on:[()=>{
+        player.onBoat=true;state.onBoat=true;startMove(player,player.dir)},null]}});
+      else say(['맑은 물이다. 깊어서 걸어서는 건널 수 없다.','(Lv.2가 되면 배를 탈 수 있다)']);
+      return;
+    case '$':
+      if(!state.flags.treasure)say(['상자를 열었다!',CONTENT.treasure.text],{after:()=>{state.flags.treasure=true;save();gainXP(CONTENT.treasure.xp)}});
+      return;
+    case 'o':say(['빈 상자다.']);return;
   }
 }
 
 /* ---------- 메뉴 ---------- */
+function esc(t){return String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
 function profileHTML(){
   const lv=level(),xp=state.xp,next=LV_XP[lv],cur=LV_XP[lv-1];
   const pct=next?Math.round((xp-cur)/(next-cur)*100):100;
   return `<div class="prof"><canvas class="ava" width="18" height="22"></canvas><div class="pinfo">
-    <div class="plv">Lv.${lv} <b>${TITLES[lv-1]}</b></div>
+    <div class="plv"><b>${esc(state.name||'탐험가')}</b> · Lv.${lv} ${TITLES[lv-1]}</div>
     <div class="xpbar"><i style="width:${pct}%"></i></div>
     <div class="pxp">${next?`다음 레벨까지 ${next-xp} XP · 모은 XP ${xp}`:`최고 레벨! · 모은 XP ${xp}`}</div></div></div>`;
 }
@@ -949,8 +999,9 @@ function openMenu(){
   const items=[
     {label:'학습 노트',note:'지금 지역 진행 상황'},
     {label:'배운 내용',note:'지난 단원까지'},
+    {label:'지도',note:hasAbility('heli')?'🚁 헬기로 이동':'지역 보기'},
     {label:'옷장',note:'코디 바꾸기'},
-    {label:'레벨 보상',note:'칭호·코디템'},
+    {label:'레벨 보상',note:'칭호·코디템·능력'},
     {label:'처음부터 하기'},
     {label:'안선생 아카이브로'},
     {label:'닫기'}];
@@ -960,10 +1011,11 @@ function openMenu(){
       switch(i){
         case 0:openNotes();break;
         case 1:openLearned();break;
-        case 2:openWardrobe('edit',()=>L.render());break;
-        case 3:openRewards();break;
-        case 4:confirmLayer('저장된 진행 상황을 지우고 처음부터 할까요?',()=>{close(L);resetGame()});break;
-        case 5:confirmLayer('안선생 아카이브로 갈까요? 진행 상황은 이 기기에 저장돼요.',()=>{location.href='./'});break;
+        case 2:openWorldMap();break;
+        case 3:openWardrobe('edit',()=>L.render());break;
+        case 4:openRewards();break;
+        case 5:confirmLayer('저장된 진행 상황을 지우고 처음부터 할까요?',()=>{close(L);resetGame()});break;
+        case 6:confirmLayer('안선생 아카이브로 갈까요? 진행 상황은 이 기기에 저장돼요.',()=>{location.href='./'});break;
         default:close(L);
       }
     }});
@@ -1004,17 +1056,147 @@ function openRewards(){
   const lv=level();
   let html='';
   for(let l=1;l<=LV_XP.length;l++){
-    const items=l===1?['기본 교복·머리 모양 3가지·안경']:unlockNames(l);
+    const items=(l===1?['기본 교복·머리 모양 3가지·안경']:unlockNames(l)).concat(abilityNames(l));
     html+=`<div class="rw ${l>lv?'lock':''}"><span class="rl">Lv.${l}</span><span class="rt"><b>${TITLES[l-1]}</b>${items.join(', ')}<br><span class="muted">${LV_XP[l-1]} XP</span></span><span class="rs">${l<=lv?'✔':'🔒'}</span></div>`;
   }
-  html+='<p class="muted" style="margin-top:10px">사람들과 처음 이야기하면 +5, 단서를 찾으면 +20, 주민을 설득하면 +40 XP</p>';
+  html+='<p class="muted" style="margin-top:10px">사람들과 처음 이야기하면 +5, 단서를 찾으면 +10~20, 주민을 설득하면 +40 XP</p>';
   infoLayer('레벨 보상',html);
+}
+
+/* ---------- 지도·헬기 ---------- */
+const WNODES=[{u:'u0',x:40,y:96},{u:'u1',x:100,y:64},{u:'u2',x:160,y:92},{u:null,name:'??? (다음 단원)',x:212,y:44}];
+function drawWorld(cv,sel){
+  const g=cv.getContext('2d');g.imageSmoothingEnabled=false;
+  r(g,0,0,240,140,'#4a8fe0');
+  for(let i=0;i<14;i++)r(g,(i*37)%240,(i*23)%140,6,1,'#8cc4f5');
+  r(g,14,24,212,104,'#7cc85a');r(g,10,34,8,84,'#7cc85a');r(g,222,30,10,80,'#7cc85a');r(g,24,18,190,8,'#7cc85a');
+  r(g,150,110,40,18,'#4a8fe0');
+  [[30,40],[60,30],[190,70],[200,110],[120,110],[80,108]].forEach(([x,y])=>{r(g,x,y,8,7,'#2f7d3a');r(g,x+3,y+7,2,2,'#7a4e2c')});
+  for(let i=0;i<WNODES.length-1;i++){const a=WNODES[i],b=WNODES[i+1];
+    const steps=24;for(let k=0;k<=steps;k+=2){r(g,Math.round(a.x+(b.x-a.x)*k/steps)-1,Math.round(a.y+(b.y-a.y)*k/steps)-1,3,3,'#dcc48e')}}
+  WNODES.forEach((n,i)=>{
+    const u=n.u&&UNITS.find(x=>x.id===n.u),open=u&&u.isOpen(),clear=u&&u.isClear(),here=u&&u.maps.includes(state.map);
+    const col=!open?'#8a879a':clear?'#e0503f':'#f0b63e';
+    if(i===sel){r(g,n.x-9,n.y-9,18,18,'#ffffff')}
+    r(g,n.x-7,n.y-7,14,14,'#34304a');r(g,n.x-5,n.y-5,10,10,col);
+    if(!open){r(g,n.x-1,n.y-3,2,5,'#fff')}
+    if(here){r(g,n.x-2,n.y-20,4,8,'#e0503f');r(g,n.x-1,n.y-12,2,3,'#e0503f');r(g,n.x-1,n.y-19,2,2,'#fff')}
+  });
+}
+function openWorldMap(){
+  const heli=hasAbility('heli');
+  const items=WNODES.map(n=>{
+    const u=n.u&&UNITS.find(x=>x.id===n.u);
+    if(!u||!u.isOpen())return{label:u?u.name:n.name,note:'🔒'};
+    const here=u.maps.includes(state.map);
+    return{label:u.name,note:here?'📍 현재 위치':u.isClear()?(heli?'✔ 클리어 · 🚁 이동 가능':'✔ 클리어'):'진행 중'};
+  });
+  listLayer({title:'지도',items,index:Math.max(0,WNODES.findIndex(n=>{const u=n.u&&UNITS.find(x=>x.id===n.u);return u&&u.maps.includes(state.map)})),
+    html:()=>`<canvas id="wmap" width="240" height="140"></canvas><p class="muted" style="margin-top:6px">${heli?'🚁 클리어한 지역을 고르면 헬기로 바로 날아가요.':'🔒 Lv.3이 되면 헬기를 타고 클리어한 지역으로 날아갈 수 있어요.'}</p>`,
+    onRender:(el,L)=>drawWorld(el.querySelector('#wmap'),L.i),
+    onSelect:(i,L)=>{
+      const n=WNODES[i],u=n.u&&UNITS.find(x=>x.id===n.u);
+      if(!u||!u.isOpen()){toast('아직 갈 수 없는 지역이에요');return}
+      if(u.maps.includes(state.map)){toast('이미 여기 있어요');return}
+      if(!heli){toast('Lv.3이 되면 헬기를 탈 수 있어요');return}
+      if(!u.isClear()){toast('클리어한 지역으로만 날아갈 수 있어요');return}
+      while(layers.length)close(layers[layers.length-1]);
+      flyTo(u);
+    }});
+}
+function flyTo(u){
+  const h=document.getElementById('heli');
+  h.classList.remove('go');void h.offsetWidth;h.classList.add('go');
+  toast('🚁 슝~ '+u.name+'(으)로!');
+  setTimeout(()=>{fadeTo(()=>{player.onBoat=false;state.onBoat=false;loadMap(u.land.map,u.land.x,u.land.y,u.land.dir)})},700);
+  setTimeout(()=>h.classList.remove('go'),1400);
+}
+
+/* ---------- 성별·이름 정하기 ---------- */
+function openGender(onDone){
+  const looks=[{g:'m',hair:0,hc:0,gl:0,out:0,acc:0},{g:'f',hair:0,hc:0,gl:0,out:0,acc:0}];
+  listLayer({title:'성별 고르기',footer:'<div class="hint">한 번 정한 성별은 나중에 바꿀 수 없어요.</div>',
+    html:'<div class="gpick"><div><canvas class="ava big" width="18" height="22"></canvas><br>남학생</div><div><canvas class="ava big" width="18" height="22"></canvas><br>여학생</div></div>',
+    items:[{label:'남학생'},{label:'여학생'}],
+    onRender:el=>{const cs=el.querySelectorAll('canvas.ava');paintAva(cs[0],looks[0]);paintAva(cs[1],looks[1])},
+    onSelect:(i,L)=>confirmLayer(`${i?'여학생':'남학생'}으로 시작할까요?<br>성별은 나중에 바꿀 수 없어요.`,()=>{
+      close(L);state.look.g=i?'f':'m';onDone&&onDone()}),
+    onCancel:()=>{}});
+}
+const K_CHO=['ㄱ','ㄲ','ㄴ','ㄷ','ㄸ','ㄹ','ㅁ','ㅂ','ㅃ','ㅅ','ㅆ','ㅇ','ㅈ','ㅉ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
+const K_JUNG=['ㅏ','ㅐ','ㅑ','ㅒ','ㅓ','ㅔ','ㅕ','ㅖ','ㅗ','ㅘ','ㅙ','ㅚ','ㅛ','ㅜ','ㅝ','ㅞ','ㅟ','ㅠ','ㅡ','ㅢ','ㅣ'];
+const K_JONG=['','ㄱ','ㄲ','ㄳ','ㄴ','ㄵ','ㄶ','ㄷ','ㄹ','ㄺ','ㄻ','ㄼ','ㄽ','ㄾ','ㄿ','ㅀ','ㅁ','ㅂ','ㅄ','ㅅ','ㅆ','ㅇ','ㅈ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
+const K_JCOMB={'ㄱㅅ':'ㄳ','ㄴㅈ':'ㄵ','ㄴㅎ':'ㄶ','ㄹㄱ':'ㄺ','ㄹㅁ':'ㄻ','ㄹㅂ':'ㄼ','ㄹㅅ':'ㄽ','ㄹㅌ':'ㄾ','ㄹㅍ':'ㄿ','ㄹㅎ':'ㅀ','ㅂㅅ':'ㅄ'};
+const K_VCOMB={'ㅗㅏ':'ㅘ','ㅗㅐ':'ㅙ','ㅗㅣ':'ㅚ','ㅜㅓ':'ㅝ','ㅜㅔ':'ㅞ','ㅜㅣ':'ㅟ','ㅡㅣ':'ㅢ'};
+function hangulBlocks(seq){
+  const B=[];
+  for(const j of seq){
+    const last=B[B.length-1];
+    if(K_CHO.includes(j)){
+      if(last&&last.cho&&last.jung&&!last.jong.length&&K_JONG.includes(j))last.jong=[j];
+      else if(last&&last.jung&&last.jong.length===1&&K_JCOMB[last.jong[0]+j])last.jong.push(j);
+      else B.push({cho:j,jung:'',jong:[]});
+    }else{
+      if(last&&last.cho&&!last.jung)last.jung=j;
+      else if(last&&last.jung&&!last.jong.length&&K_VCOMB[last.jung+j])last.jung=K_VCOMB[last.jung+j];
+      else if(last&&last.jung&&last.jong.length){const c=last.jong.pop();B.push({cho:c,jung:j,jong:[]})}
+      else B.push({cho:'',jung:j,jong:[]});
+    }
+  }
+  return B;
+}
+function hangulStr(seq){
+  return hangulBlocks(seq).map(b=>{
+    const jong=b.jong.length===2?K_JCOMB[b.jong[0]+b.jong[1]]:(b.jong[0]||'');
+    if(b.cho&&b.jung)return String.fromCharCode(0xAC00+(K_CHO.indexOf(b.cho)*21+K_JUNG.indexOf(b.jung))*28+K_JONG.indexOf(jong));
+    return b.cho+b.jung+jong;
+  }).join('');
+}
+function openNameEntry(onDone){
+  const MAX=6,seq=[];
+  const keys=[...K_CHO.map(c=>({t:c,k:'c'})),{t:'← 지우기',k:'del'},{t:'완료',k:'ok'},...K_JUNG.map(v=>({t:v,k:'v'}))];
+  const el=makePanel('');
+  const L={el,i:0};
+  function render(){
+    const nm=hangulStr(seq);
+    el.innerHTML=`<h3>이름 짓기</h3><p class="muted">실명 말고 <b>별명</b>을 지어 주세요. 최대 ${MAX}글자 · 사람들이 이 이름으로 불러요.</p>
+      <div class="nmbox">${esc(nm)}<span class="caret">_</span></div>
+      <div class="kgrid">${keys.map((k,i)=>(i===21?'<div class="ksep"></div>':'')+`<div class="kc ${k.k==='v'?'v':''} ${k.k==='del'||k.k==='ok'?'ctl':''} ${i===L.i?'cur':''}" data-i="${i}">${k.t}</div>`).join('')}</div>
+      <div class="hint">방향 버튼으로 고르고 ○ 입력 · ✕ 한 글자 지우기</div>`;
+    el.querySelectorAll('.kc').forEach(c=>c.addEventListener('click',()=>{L.i=+c.dataset.i;act()}));
+  }
+  function act(){
+    const k=keys[L.i];
+    if(k.k==='del'){seq.pop();render();return}
+    if(k.k==='ok'){
+      const nm=hangulStr(seq);
+      if(!nm){toast('이름을 지어 주세요');return}
+      if(/[ㄱ-ㅎㅏ-ㅣ]/.test(nm)){toast('완성되지 않은 글자가 있어요');return}
+      confirmLayer(`「${esc(nm)}」(으)로 할까요?`,()=>{state.name=nm;close(L);onDone&&onDone()});
+      return;
+    }
+    seq.push(k.t);
+    if(hangulBlocks(seq).length>MAX){seq.pop();toast(MAX+'글자까지 지을 수 있어요')}
+    render();
+  }
+  L.onKey=a=>{
+    const n=keys.length;
+    if(a==='left')L.i=(L.i-1+n)%n;
+    else if(a==='right')L.i=(L.i+1)%n;
+    else if(a==='up')L.i=(L.i-7+n)%n;
+    else if(a==='down')L.i=(L.i+7)%n;
+    else if(a==='ok'){act();return}
+    else if(a==='cancel'){seq.pop()}
+    else return;
+    render();
+  };
+  render();pushLayer(L);
 }
 
 /* ---------- 옷장 (캐릭터 만들기 겸용) ---------- */
 function openWardrobe(mode,onDone){
   const look=Object.assign({},state.look);
-  const ROWS=[['g','성별'],['hair','머리 모양'],['hc','머리색'],['gl','안경'],['out','옷'],['acc','소품'],['done',mode==='create'?'이대로 시작하기 ▶':'저장하고 닫기']];
+  const ROWS=[['hair','머리 모양'],['hc','머리색'],['gl','안경'],['out','옷'],['acc','소품'],['done',mode==='create'?'이대로 시작하기 ▶':'저장하고 닫기']];
   const el=makePanel('');
   const L={el,row:0};
   const lv=level();
@@ -1026,7 +1208,7 @@ function openWardrobe(mode,onDone){
   function finish(){state.look=look;save();close(L);onDone&&onDone()}
   function render(){
     el.innerHTML=`<h3>${mode==='create'?'내 캐릭터 만들기':'옷장'}</h3>
-      <div class="ward"><div class="wprev"><canvas class="ava big" width="18" height="22"></canvas><div class="wlv">Lv.${lv} ${TITLES[lv-1]}</div></div>
+      <div class="ward"><div class="wprev"><canvas class="ava big" width="18" height="22"></canvas><div class="wlv">${esc(state.name||'')} · ${look.g==='m'?'남학생':'여학생'}<br>Lv.${lv} ${TITLES[lv-1]}</div></div>
       <div class="wrows">${ROWS.map(([k,lab],ri)=>{
         if(k==='done')return `<div class="wrow done ${L.row===ri?'cur':''}" data-r="${ri}"><span class="ar">▶</span>${lab}</div>`;
         const list=optList(k,look),idx=getIdx(k,look),lk=list.filter(locked);
@@ -1183,7 +1365,7 @@ function openTitle(){
 function startCreate(){
   clearSave();
   state=freshState();
-  openWardrobe('create',()=>{
+  openGender(()=>openNameEntry(()=>openWardrobe('create',()=>{
     started=true;
     loadMap(state.map,state.x,state.y,state.dir);updateHUD();save();
     say(['여기는 학교 교실이다.','앞에 계신 안선생님이 무언가 말하려고 하신다.'],{after:()=>{
@@ -1191,7 +1373,7 @@ function startCreate(){
       if(t){t.dir=OPP[player.dir];if(!state.talked.ansun){state.talked.ansun=true;gainXP(5)}}
       const r=ansunTalk();say(r.lines,{name:'안선생',choice:r.choice});
     }});
-  });
+  })));
 }
 function continueGame(){
   const s=loadSave();
@@ -1199,6 +1381,7 @@ function continueGame(){
   state.look=Object.assign(freshState().look,state.look||{});
   if(!MAPS[state.map]){state.map='town';state.x=7;state.y=7}
   if(!state.flags.tutorial&&state.map!=='classroom')state.flags.tutorial=true;
+  if(!state.name)state.name='탐험가';
   started=true;
   loadMap(state.map,state.x,state.y,state.dir);updateHUD();
 }
@@ -1247,7 +1430,13 @@ function render(now){
   const ents=[...entities].sort((a,b)=>a.py-b.py);
   for(const e of ents){
     const x=Math.round(e.px-cx),y=Math.round(e.py-cy);
-    ctx.fillStyle='rgba(0,0,0,.2)';ctx.fillRect(x+3,y+14,10,2);
+    if(!(e.isPlayer&&e.onBoat)){ctx.fillStyle='rgba(0,0,0,.2)';ctx.fillRect(x+3,y+14,10,2)}
+    if(e.isPlayer&&e.onBoat){
+      ctx.drawImage(getSprite(state.look,e.dir,0),x-1,y-7);
+      r(ctx,x+1,y+8,14,6,'#8a5a2b');r(ctx,x+1,y+8,14,2,'#c48c58');r(ctx,x+3,y+14,10,1,'#5a3a1a');
+      r(ctx,x,y+9,1,3,'#5a3a1a');r(ctx,x+15,y+9,1,3,'#5a3a1a');
+      const o=Math.floor(now/300)%2;r(ctx,x-1+o,y+15,4,1,'#cfe8ff');r(ctx,x+13-o,y+15,4,1,'#cfe8ff');
+    }else
     ctx.drawImage(getSprite(e.isPlayer?state.look:e.look,e.dir,frameOf(e)),x-1,y-5);
   }
   if(fade.a>0){ctx.fillStyle=`rgba(0,0,0,${fade.a})`;ctx.fillRect(0,0,CW,CH)}
