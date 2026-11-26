@@ -207,6 +207,8 @@ body.touch.land #bM{left:auto;right:22px;top:14px;transform:none}
    - 캐릭터: 남/여 교복, 머리·머리색·안경·옷·소품 선택. 레벨이 오르면 코디템이 열림
    - 저장: 이 기기 브라우저에만 저장 (이름·학번 등 개인정보는 받지 않음)
    - 시작: 성별 고르기(고정) → 이름(별명) 짓기 → 꾸미기 → 교실 튜토리얼(안선생, 건너뛰기 가능)
+   - 대화 중 ✕(S)를 누르면 대화가 바로 끝남 (질문이 있는 대화는 질문으로 바로 넘어감)
+   - 새싹 마을: 학교 앞에서 북·서·동·남 네 방향 길 (남쪽=숲길, 나머지=다음 단원 준비 중)
    - 새싹 마을 건물: 학교(교실)·가정집·연구소·도서관·관측소·온실 + 게시판 3곳 + 동물(고양이·강아지·토끼·병아리·오리)
    - 능력: Lv.2 배 타기(물 건너기), Lv.3 헬기(지도에서 클리어한 지역으로 이동)
    - 대사·문제·단서는 CONTENT / MAPS / UNITS 안의 [예시]. 나중에 실제 내용으로 교체
@@ -286,7 +288,7 @@ const NPC_LOOK={
   granny:{g:'f',hair:0,hcCol:'#c9c9d2',gl:1,out:'c',top:'#c06a8a',bottom:'#5a4a5a',acc:0},
   astronomer:{g:'m',hair:1,hc:1,gl:0,out:'c',top:'#3d3a6e',bottom:'#2b2a3a',acc:2,accCol:'#5a4fa0'},
   gardener:{g:'f',hair:1,hc:2,gl:0,out:'c',top:'#6a994e',bottom:'#6b4a2a',acc:1,accCol:'#e9c46a'},
-  ansun:{g:'m',hair:3,hc:0,gl:1,out:3,acc:0},
+  ansun:{g:'m',hair:3,hc:0,gl:0,out:3,acc:0},
   guide:{g:'f',hair:1,hc:1,gl:0,out:'c',top:'#e76f51',bottom:'#4a4a5a',acc:0},
   doubter:{g:'m',hair:1,hc:0,gl:0,out:'c',top:'#8d6cc4',bottom:'#3a3a44',acc:0},
   guard:{g:'m',hair:2,hc:0,gl:0,out:'c',top:'#3d5a80',bottom:'#2b2d42',acc:1,accCol:'#3d5a80'},
@@ -316,12 +318,12 @@ const MAPS={
     lockMsg:['문이 잠겨 있다.','안선생님 설명을 먼저 들어 보자.'],
     npcs:[{id:'ansun',name:'안선생',x:4,y:3,dir:'down',talk:ansunTalk}]},
   town:{name:'새싹 마을',indoor:false,rows:[
-    '##############################',
-    '#,,........CCCCCCCC........,,#',
-    '#,.........CCCCCCCC..........#',
-    '#..........cccJcccc........,,#',
-    '#........P.cccDcccc..........#',
-    '#.==========================.#',
+    '####################g#########',
+    '#,,........CCCCCCCC.=S.....,,#',
+    '#,.........CCCCCCCC.=........#',
+    '#..........cccJcccc.=......,,#',
+    '#.S......P.cccDcccc.=......S.#',
+    'g============================g',
     '#.RRRRR.......=.S.....YYYYYY.#',
     '#.HHHHH.......=.......yyZZyy.#',
     '#.HHDHH..F....=....F..yyDDyy.#',
@@ -344,7 +346,10 @@ const MAPS={
       '24,13':{to:'observatory',x:4,y:4,dir:'up'},
       '11,13':{to:'greenhouse',x:4,y:4,dir:'up'},'12,13':{to:'greenhouse',x:5,y:4,dir:'up'},
       '14,21':{to:'forest',x:6,y:1,dir:'down'}},
-    signs:{'16,6':['「새싹 마을」','북쪽: 학교 · 서쪽: 가정집, 연구소','동쪽: 도서관, 관측소 · 가운데: 온실','남쪽 문은 마을 문제가 해결되면 열린다.'],
+    signs:{'21,1':['「북쪽 길」','다음 단원 지역으로 이어지는 길이다. (준비 중)'],
+      '2,4':['「서쪽 길」','다음 단원 지역으로 이어지는 길이다. (준비 중)'],
+      '27,4':['「동쪽 길」','다음 단원 지역으로 이어지는 길이다. (준비 중)'],
+      '16,6':['「새싹 마을」','학교에서 네 방향으로 길이 나 있다.','북쪽·서쪽·동쪽 길: 다음 단원 지역 (준비 중)','남쪽 길: 숲길 — 마을 문제가 해결되면 열린다.','건물: 학교 · 가정집 · 연구소 · 도서관 · 관측소 · 온실'],
       '9,4':['📌 학교 게시판','[복습 예시] 식물은 잎에서 빛을 이용해 양분을 만든다.','모르는 게 생기면 MENU → 학습 노트를 보자.'],
       '20,11':['📌 마을 게시판','관측소: 다음 단원 「별과 우주」 준비 중!','온실: 식물을 직접 볼 수 있어요.'],
       '12,19':['📌 남쪽 게시판','남쪽 숲길로 가는 문은 마을 문제가 해결되면 열립니다.','[복습 예시] 증거를 모아 설득하기 — 단서 3개가 필요해요.']},
@@ -562,6 +567,7 @@ function paintTile(g,ch,indoor,variant){
       r(g,2,4,7,1,'#e8efe8');r(g,3,7,10,1,'#cfe0d2');r(g,2,10,5,1,'#cfe0d2');r(g,11,10,2,1,'#f2e6a0');break;
     case '$':pGrass(g);r(g,2,5,12,9,'#8a5a2b');r(g,2,5,12,3,'#b07a3c');r(g,2,8,12,1,'#5a3a1a');r(g,7,7,2,3,'#f2c94c');break;
     case 'o':pGrass(g);r(g,2,5,12,9,'#8a5a2b');r(g,2,5,12,2,'#5a3a1a');r(g,3,7,10,6,'#3a2412');break;
+    case 'g':pPath(g);for(let i=0;i<4;i++)r(g,1+i*4,1,2,14,'#5c6370');r(g,0,3,16,2,'#4a505a');r(g,0,11,16,2,'#4a505a');r(g,5,6,6,4,'#f2c94c');r(g,6,7,4,2,'#34304a');break;
     case 'C':r(g,0,0,16,16,'#41589c');for(let y=3;y<16;y+=4)r(g,0,y,16,1,'#33467e');r(g,(variant.length%2)?3:9,1,3,1,'#5a72b8');break;
     case 'c':r(g,0,0,16,16,'#f3ead2');r(g,0,14,16,2,'#c9bb98');if(variant==='w'){r(g,3,3,10,8,'#5b4a3a');r(g,4,4,8,6,'#a9dcf0');r(g,7,4,2,6,'#5b4a3a');r(g,4,6,8,1,'#5b4a3a')}break;
     case 'J':r(g,0,0,16,16,'#f3ead2');r(g,0,14,16,2,'#c9bb98');r(g,4,1,8,1,'#34304a');r(g,3,2,10,10,'#34304a');r(g,4,12,8,1,'#34304a');r(g,4,2,8,10,'#ffffff');r(g,4,3,8,8,'#ffffff');r(g,7,4,2,4,'#34304a');r(g,8,7,3,1,'#c0504a');break;
@@ -828,7 +834,7 @@ function loadMap(id,x,y,dir){
   if(started){showBanner(map.name);updateHUD()}
 }
 function tileAt(x,y){if(y<0||y>=map.rows.length||x<0||x>=map.rows[0].length)return '#';return map.rows[y][x]}
-const SOLID=new Set('#RH~FBTXQSK$CcJLlAYyZVvWwP*%'.split(''));
+const SOLID=new Set('#RH~FBTXQSK$CcJLlAYyZVvWwP*%g'.split(''));
 function isLocked(x,y){return !!(map.locked&&map.locked[x+','+y]&&!state.flags[map.lockFlag])}
 function passable(x,y,self){
   const c=tileAt(x,y);
@@ -1014,7 +1020,11 @@ function dlgKey(a){
     if(a==='ok'||a==='cancel'){const pick=a==='cancel'?1:DLG.ci,f=DLG.opts.choice.on[pick];endDlg();f&&f()}
     return;
   }
-  if(a!=='ok'&&a!=='cancel')return;
+  if(a==='cancel'){
+    if(DLG.opts.choice){DLG.i=DLG.pages.length-1;DLG.shown=DLG.pages[DLG.i].length;renderDlg();return}
+    const after=DLG.opts.after;endDlg();after&&after();return;
+  }
+  if(a!=='ok')return;
   const full=DLG.pages[DLG.i];
   if(Math.floor(DLG.shown)<full.length){DLG.shown=full.length;renderDlg();return}
   DLG.i++;
@@ -1097,6 +1107,7 @@ function interact(){
     case '*':say(['망원경으로 밤하늘을 들여다보았다. 별이 반짝반짝 빛난다!','(다음 단원 「별과 우주」에서 쓰일 예정)']);return;
     case '%':say(['유리 지붕으로 들어온 햇빛을 받아 잎이 초록색으로 싱싱하다.']);return;
     case 'G':if(!isOpenGate())say(['굳게 잠긴 문이다.','마을 문제가 해결되면 열릴 것 같다.']);return;
+    case 'g':say(['길이 막혀 있다.','다음 단원 지역으로 이어지는 길이다. (준비 중)']);return;
     case '~':
       if(player.onBoat)return;
       if(hasAbility('boat'))say(['물이 깊다.','🚤 배를 타고 건너갈까?'],{choice:{labels:['배를 탄다','그만둔다'],on:[()=>{
