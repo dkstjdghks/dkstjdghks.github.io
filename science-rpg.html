@@ -207,6 +207,7 @@ body.touch.land #bM{left:auto;right:22px;top:14px;transform:none}
    - 캐릭터: 남/여 교복, 머리·머리색·안경·옷·소품 선택. 레벨이 오르면 코디템이 열림
    - 저장: 이 기기 브라우저에만 저장 (이름·학번 등 개인정보는 받지 않음)
    - 시작: 성별 고르기(고정) → 이름(별명) 짓기 → 꾸미기 → 교실 튜토리얼(안선생, 건너뛰기 가능)
+   - 새싹 마을 건물: 학교(교실)·가정집·연구소·도서관·관측소·온실 + 게시판 3곳 + 동물(고양이·강아지·토끼·병아리·오리)
    - 능력: Lv.2 배 타기(물 건너기), Lv.3 헬기(지도에서 클리어한 지역으로 이동)
    - 대사·문제·단서는 CONTENT / MAPS / UNITS 안의 [예시]. 나중에 실제 내용으로 교체
    ===================================================================== */
@@ -254,13 +255,13 @@ const CONTENT={
   clues:{
     t0:{unit:'u0',name:'탐험 규칙',text:'관찰하고, 기록하고, 증거로 말하기!',xp:10},
     c1:{unit:'u1',name:'식물 도감 한 쪽',text:'[예시] 식물은 잎에서 빛을 이용해 스스로 양분을 만든다.'},
-    c2:{unit:'u1',name:'자료실 문제 정답',text:'[예시] 양분을 만드는 데에는 빛이 꼭 필요하다.'},
+    c2:{unit:'u1',name:'도서관 문제 정답',text:'[예시] 양분을 만드는 데에는 빛이 꼭 필요하다.'},
     c3:{unit:'u1',name:'실험 관찰 기록',text:'[예시] 물과 흙이 있어도 빛이 없으면 식물은 자라지 못했다.'}
   },
   quiz:[{
     q:'[예시 문제] 식물이 스스로 양분을 만들 때 꼭 필요한 것은?',
     options:['빛','소리','흙 속의 돌','바람'],answer:0,
-    hint:'실험실에서 무엇을 바꿨을 때 식물이 자라지 않았는지 떠올려 보자.',
+    hint:'연구소에서 무엇을 바꿨을 때 식물이 자라지 않았는지 떠올려 보자.',
     explain:'식물은 빛을 이용해 양분을 만든다.'
   }]
 };
@@ -270,10 +271,10 @@ const UNITS=[
    summary:['이동은 방향키, 조사·대화는 ○(A), 취소는 ✕(S), 메뉴는 MENU(Enter)','단서를 모아 잘못 알고 있는 사람을 설득하면 다음 지역이 열린다.'],
    land:{map:'classroom',x:4,y:6,dir:'up'},
    isOpen:()=>true,isClear:()=>!!state.flags.tutorial},
-  {id:'u1',name:'새싹 마을',topic:'식물과 에너지 (예시)',maps:['town','lab','library'],
-   goals:[{id:'c1',text:'자료실 책장 조사하기'},{id:'c2',text:'자료실 컴퓨터 문제 풀기'},{id:'c3',text:'실험실에서 식물을 끝까지 키우기'},{id:'persuaded',text:'고집쟁이 주민 설득하기'}],
+  {id:'u1',name:'새싹 마을',topic:'식물과 에너지 (예시)',maps:['town','lab','library','house','observatory','greenhouse'],
+   goals:[{id:'c1',text:'도서관 책장 조사하기'},{id:'c2',text:'도서관 컴퓨터 문제 풀기'},{id:'c3',text:'연구소에서 식물을 끝까지 키우기'},{id:'persuaded',text:'고집쟁이 주민 설득하기'}],
    summary:['[예시] 식물은 빛을 이용해 스스로 양분을 만든다.','[예시] 물과 흙만 있고 빛이 없으면 식물은 자라지 못한다.'],
-   land:{map:'town',x:7,y:7,dir:'down'},
+   land:{map:'town',x:14,y:6,dir:'down'},
    isOpen:()=>true,isClear:()=>!!state.flags.persuaded},
   {id:'u2',name:'남쪽 숲길',topic:'다음 단원 (준비 중)',maps:['forest'],goals:[],summary:[],
    land:{map:'forest',x:6,y:1,dir:'down'},
@@ -282,6 +283,9 @@ const UNITS=[
 
 /* ---------- NPC 모습 ---------- */
 const NPC_LOOK={
+  granny:{g:'f',hair:0,hcCol:'#c9c9d2',gl:1,out:'c',top:'#c06a8a',bottom:'#5a4a5a',acc:0},
+  astronomer:{g:'m',hair:1,hc:1,gl:0,out:'c',top:'#3d3a6e',bottom:'#2b2a3a',acc:2,accCol:'#5a4fa0'},
+  gardener:{g:'f',hair:1,hc:2,gl:0,out:'c',top:'#6a994e',bottom:'#6b4a2a',acc:1,accCol:'#e9c46a'},
   ansun:{g:'m',hair:3,hc:0,gl:1,out:3,acc:0},
   guide:{g:'f',hair:1,hc:1,gl:0,out:'c',top:'#e76f51',bottom:'#4a4a5a',acc:0},
   doubter:{g:'m',hair:1,hc:0,gl:0,out:'c',top:'#8d6cc4',bottom:'#3a3a44',acc:0},
@@ -307,42 +311,100 @@ const MAPS={
     '#.TT.TT.TT.#',
     '#..........#',
     '#####dd#####'],
-    warps:{'5,8':{to:'town',x:7,y:7,dir:'down'},'6,8':{to:'town',x:7,y:7,dir:'down'}},
+    warps:{'5,8':{to:'town',x:14,y:5,dir:'down'},'6,8':{to:'town',x:14,y:5,dir:'down'}},
     locked:{'5,8':1,'6,8':1},lockFlag:'tutorial',
     lockMsg:['문이 잠겨 있다.','안선생님 설명을 먼저 들어 보자.'],
     npcs:[{id:'ansun',name:'안선생',x:4,y:3,dir:'down',talk:ansunTalk}]},
   town:{name:'새싹 마을',indoor:false,rows:[
-    '####################',
-    '#,,..............,,#',
-    '#..RRRRR....RRRRR..#',
-    '#..HHHHH....HHHHH..#',
-    '#..HHDHH.S..HHDHH..#',
-    '#....=........=....#',
-    '#....==========....#',
-    '#.,.......=.....,,.#',
-    '#~~~~.....=....,,,.#',
-    '#~~~~..F..=..F.....#',
-    '#~~~~..F..=..F..,..#',
-    '#......FFF=FFF.....#',
-    '#.........=........#',
-    '#..,,.....=.....,,.#',
-    '#.........=........#',
-    '##########G#########'],
-    warps:{'5,4':{to:'lab',x:5,y:6,dir:'up'},'14,4':{to:'library',x:5,y:6,dir:'up'},'10,15':{to:'forest',x:6,y:1,dir:'down'}},
-    signs:{'9,4':['「새싹 마을」','← 왼쪽 집: 실험실   /   오른쪽 집: 자료실 →','남쪽 문은 마을 문제가 해결되면 열린다.']},
+    '##############################',
+    '#,,........CCCCCCCC........,,#',
+    '#,.........CCCCCCCC..........#',
+    '#..........cccJcccc........,,#',
+    '#........P.cccDcccc..........#',
+    '#.==========================.#',
+    '#.RRRRR.......=.S.....YYYYYY.#',
+    '#.HHHHH.......=.......yyZZyy.#',
+    '#.HHDHH..F....=....F..yyDDyy.#',
+    '#...=....F....=....F....==...#',
+    '#........FFFFF=FFFFF....==...#',
+    '#.LLLLLL......=.....P..VVV...#',
+    '#.llAAll.WWWWWW.......VVVVV..#',
+    '#.llEEll.wwEEww.......vvDvv..#',
+    '#.............=.........=....#',
+    '#..========================..#',
+    '#.............=..............#',
+    '#.............=..~~~~....,,..#',
+    '#..,,.........=..~~~~....,,,.#',
+    '#..,....,,..P.=..~~~~........#',
+    '#.............=..............#',
+    '##############G###############'],
+    warps:{'14,4':{to:'classroom',x:5,y:7,dir:'up'},'4,8':{to:'house',x:4,y:4,dir:'up'},
+      '4,13':{to:'lab',x:5,y:6,dir:'up'},'5,13':{to:'lab',x:6,y:6,dir:'up'},
+      '24,8':{to:'library',x:5,y:6,dir:'up'},'25,8':{to:'library',x:6,y:6,dir:'up'},
+      '24,13':{to:'observatory',x:4,y:4,dir:'up'},
+      '11,13':{to:'greenhouse',x:4,y:4,dir:'up'},'12,13':{to:'greenhouse',x:5,y:4,dir:'up'},
+      '14,21':{to:'forest',x:6,y:1,dir:'down'}},
+    signs:{'16,6':['「새싹 마을」','북쪽: 학교 · 서쪽: 가정집, 연구소','동쪽: 도서관, 관측소 · 가운데: 온실','남쪽 문은 마을 문제가 해결되면 열린다.'],
+      '9,4':['📌 학교 게시판','[복습 예시] 식물은 잎에서 빛을 이용해 양분을 만든다.','모르는 게 생기면 MENU → 학습 노트를 보자.'],
+      '20,11':['📌 마을 게시판','관측소: 다음 단원 「별과 우주」 준비 중!','온실: 식물을 직접 볼 수 있어요.'],
+      '12,19':['📌 남쪽 게시판','남쪽 숲길로 가는 문은 마을 문제가 해결되면 열립니다.','[복습 예시] 증거를 모아 설득하기 — 단서 3개가 필요해요.']},
     npcs:[
-      {id:'guide',name:'마을 안내원',x:3,y:6,dir:'down',talk:()=>({lines:[
+      {id:'guide',name:'마을 안내원',x:13,y:6,dir:'down',talk:()=>({lines:[
         '안녕, {이름}! 여기는 새싹 마을이야.',
         '울타리 안의 주민이 "식물은 흙을 먹고 자란다"고 우기고 있어.',
-        '실험실과 자료실에서 증거(단서)를 모아서 설득해 볼래?',
+        '연구소와 도서관에서 증거(단서)를 모아서 설득해 볼래?',
+        '가정집 할머니나 온실 정원사에게 물어보면 힌트를 얻을 수도 있어.',
         'MENU를 누르면 학습 노트에서 다음 할 일을 볼 수 있어.']})},
-      {id:'doubter',name:'고집쟁이 주민',x:9,y:10,dir:'down',talk:doubterTalk},
-      {id:'guard',name:'문지기',x:11,y:14,dir:'left',talk:()=>({lines:state.flags.persuaded
+      {id:'doubter',name:'고집쟁이 주민',x:12,y:9,dir:'down',talk:doubterTalk},
+      {id:'guard',name:'문지기',x:15,y:20,dir:'left',talk:()=>({lines:state.flags.persuaded
         ?['문이 열렸어! 남쪽 숲길로 가 봐.']
         :['이 문은 마을 문제가 해결되어야 열려.','저 고집쟁이 주민을 설득해 보는 게 어때?']})},
-      {id:'kid',name:'꼬마',x:16,y:9,dir:'down',wander:true,talk:()=>({lines:['나 여기저기 돌아다니는 중이야!','(NPC가 혼자 돌아다니는 기능 예시)']})}
+      {id:'kid',name:'꼬마',x:20,y:14,dir:'down',wander:true,talk:()=>({lines:['나 여기저기 돌아다니는 중이야!','관측소 망원경으로 별 본 적 있어?']})},
+      {id:'cat',name:'고양이',animal:'cat',x:6,y:9,dir:'down',wander:true,talk:()=>({lines:['야옹~','(고양이가 다리에 몸을 비빈다)']})},
+      {id:'dog',name:'강아지',animal:'dog',x:17,y:7,dir:'left',wander:true,talk:()=>({lines:['멍멍!','(강아지가 꼬리를 흔든다)']})},
+      {id:'rabbit',name:'토끼',animal:'rabbit',x:25,y:18,dir:'left',wander:true,talk:()=>({lines:['(토끼가 코를 씰룩거린다)']})},
+      {id:'chick',name:'병아리',animal:'chick',x:9,y:17,dir:'down',wander:true,talk:()=>({lines:['삐약삐약!']})},
+      {id:'duck',name:'오리',animal:'duck',x:18,y:18,dir:'left',talk:()=>({lines:['꽥꽥!','(오리가 연못 위에 둥둥 떠 있다)']})}
     ]},
-  lab:{name:'실험실',indoor:true,rows:[
+  house:{name:'가정집',indoor:true,rows:[
+    '##########',
+    '#BB...TT.#',
+    '#........#',
+    '#.TT.....#',
+    '#........#',
+    '####dd####'],
+    warps:{'4,5':{to:'town',x:4,y:9,dir:'down'},'5,5':{to:'town',x:4,y:9,dir:'down'}},
+    npcs:[{id:'granny',name:'할머니',x:6,y:2,dir:'down',talk:()=>({lines:[
+      '어서 오렴, {이름}.',
+      '[힌트 예시] 창가에 둔 화분은 쑥쑥 자라는데, 어두운 창고에 둔 화분은 시들어 버렸단다.',
+      '흙도 물도 똑같이 줬는데 말이야. 왜 그럴까?',
+      '연구소 실험대에서 직접 확인해 보렴.']})},
+      {id:'housecat',name:'고양이',animal:'cat',x:3,y:4,dir:'right',talk:()=>({lines:['냐옹… (졸린 듯 하품한다)']})}]},
+  observatory:{name:'관측소',indoor:true,rows:[
+    '##########',
+    '#...**...#',
+    '#........#',
+    '#.BB..TT.#',
+    '#........#',
+    '####dd####'],
+    warps:{'4,5':{to:'town',x:24,y:14,dir:'down'},'5,5':{to:'town',x:24,y:14,dir:'down'}},
+    npcs:[{id:'astronomer',name:'천문학자',x:2,y:2,dir:'down',talk:()=>({lines:[
+      '여기는 관측소야. 밤하늘의 별과 행성을 관찰하는 곳이지.',
+      '위쪽 망원경을 들여다봐도 좋아.',
+      '이곳은 나중에 「별과 우주」 단원에서 쓰일 거야. (준비 중)']})}]},
+  greenhouse:{name:'온실',indoor:true,rows:[
+    '##########',
+    '#%%%..%%%#',
+    '#........#',
+    '#%%%..%%%#',
+    '#........#',
+    '####dd####'],
+    warps:{'4,5':{to:'town',x:11,y:14,dir:'down'},'5,5':{to:'town',x:12,y:14,dir:'down'}},
+    npcs:[{id:'gardener',name:'정원사',x:7,y:2,dir:'down',talk:()=>({lines:[
+      '온실에 온 걸 환영해, {이름}!',
+      '유리 지붕 덕분에 햇빛이 잘 들어와서 식물들이 싱싱하지?',
+      '[힌트 예시] 식물이 자라는 데 무엇이 필요한지, 연구소에서 조건을 바꿔 가며 실험해 봐.']})}]},
+  lab:{name:'연구소',indoor:true,rows:[
     '############',
     '#BBB..TTXTT#',
     '#..........#',
@@ -351,14 +413,14 @@ const MAPS={
     '#..........#',
     '#..........#',
     '#####dd#####'],
-    warps:{'5,7':{to:'town',x:5,y:5,dir:'down'},'6,7':{to:'town',x:5,y:5,dir:'down'}},
+    warps:{'5,7':{to:'town',x:4,y:14,dir:'down'},'6,7':{to:'town',x:5,y:14,dir:'down'}},
     npcs:[
       {id:'researcher',name:'연구원',x:3,y:3,dir:'down',talk:()=>({lines:[
-        '여기는 실험실이야.',
+        '여기는 연구소야.',
         '위쪽 실험대에서 빛과 물의 양을 바꿔 가며 식물을 키워 볼 수 있어.',
         '식물이 끝까지 건강하게 자라면 중요한 단서가 될 거야.']})}
     ]},
-  library:{name:'자료실',indoor:true,rows:[
+  library:{name:'도서관',indoor:true,rows:[
     '############',
     '#BBBB..TQTT#',
     '#..........#',
@@ -367,10 +429,10 @@ const MAPS={
     '#..........#',
     '#..........#',
     '#####dd#####'],
-    warps:{'5,7':{to:'town',x:14,y:5,dir:'down'},'6,7':{to:'town',x:14,y:5,dir:'down'}},
+    warps:{'5,7':{to:'town',x:24,y:9,dir:'down'},'6,7':{to:'town',x:25,y:9,dir:'down'}},
     npcs:[
       {id:'librarian',name:'사서',x:9,y:3,dir:'down',talk:()=>({lines:[
-        '자료실에 온 걸 환영해.',
+        '도서관에 온 걸 환영해.',
         '책장을 살펴보면 단서가 있을지도 몰라.',
         '위쪽 컴퓨터에서는 문제를 풀 수 있어.']})}
     ]},
@@ -389,9 +451,11 @@ const MAPS={
     '#~~~.$~~~~.....#',
     '#~~~~~~~~~.....#',
     '################'],
-    warps:{'6,0':{to:'town',x:10,y:14,dir:'up'}},
+    warps:{'6,0':{to:'town',x:14,y:20,dir:'up'}},
     signs:{'7,6':['「이 앞은 다음 단원 지역」','(아직 준비 중)']},
     npcs:[
+      {id:'frabbit',name:'토끼',animal:'rabbit',x:13,y:3,dir:'left',wander:true,talk:()=>({lines:['(토끼가 풀을 오물오물 먹고 있다)']})},
+      {id:'fduck',name:'오리',animal:'duck',x:7,y:9,dir:'left',talk:()=>({lines:['꽥!']})},
       {id:'traveler',name:'나그네',x:10,y:9,dir:'left',talk:()=>({lines:['여기는 다음 단원 지역이 들어올 자리야.','저 호수 가운데 섬에 상자가 보이지? 배가 있으면 건너갈 수 있을 텐데.']})}
     ]}
 };
@@ -498,6 +562,30 @@ function paintTile(g,ch,indoor,variant){
       r(g,2,4,7,1,'#e8efe8');r(g,3,7,10,1,'#cfe0d2');r(g,2,10,5,1,'#cfe0d2');r(g,11,10,2,1,'#f2e6a0');break;
     case '$':pGrass(g);r(g,2,5,12,9,'#8a5a2b');r(g,2,5,12,3,'#b07a3c');r(g,2,8,12,1,'#5a3a1a');r(g,7,7,2,3,'#f2c94c');break;
     case 'o':pGrass(g);r(g,2,5,12,9,'#8a5a2b');r(g,2,5,12,2,'#5a3a1a');r(g,3,7,10,6,'#3a2412');break;
+    case 'C':r(g,0,0,16,16,'#41589c');for(let y=3;y<16;y+=4)r(g,0,y,16,1,'#33467e');r(g,(variant.length%2)?3:9,1,3,1,'#5a72b8');break;
+    case 'c':r(g,0,0,16,16,'#f3ead2');r(g,0,14,16,2,'#c9bb98');if(variant==='w'){r(g,3,3,10,8,'#5b4a3a');r(g,4,4,8,6,'#a9dcf0');r(g,7,4,2,6,'#5b4a3a');r(g,4,6,8,1,'#5b4a3a')}break;
+    case 'J':r(g,0,0,16,16,'#f3ead2');r(g,0,14,16,2,'#c9bb98');r(g,4,1,8,1,'#34304a');r(g,3,2,10,10,'#34304a');r(g,4,12,8,1,'#34304a');r(g,4,2,8,10,'#ffffff');r(g,4,3,8,8,'#ffffff');r(g,7,4,2,4,'#34304a');r(g,8,7,3,1,'#c0504a');break;
+    case 'L':r(g,0,0,16,16,'#b4bec9');r(g,0,7,16,1,'#a0aab6');r(g,0,14,16,2,'#8a94a0');if(variant==='s'){r(g,4,2,8,5,'#eef2f6');r(g,5,1,6,1,'#eef2f6');r(g,7,7,2,4,'#6a7480');r(g,7,3,2,2,'#c0504a')}else{r(g,3,9,4,3,'#9aa4b0')}break;
+    case 'l':r(g,0,0,16,16,'#f4f7fa');r(g,0,10,16,2,'#3d7fd1');r(g,0,14,16,2,'#c4ccd6');if(variant==='w'){r(g,3,2,10,7,'#6a7480');r(g,4,3,8,5,'#bfe6ff');r(g,5,4,2,1,'#ffffff')}break;
+    case 'A':r(g,0,0,16,16,'#f4f7fa');r(g,0,14,16,2,'#c4ccd6');r(g,1,1,14,12,'#3d7fd1');r(g,7,2,2,3,'#fff');r(g,6,5,4,1,'#fff');r(g,5,6,6,5,'#fff');r(g,6,8,4,2,'#7fe0a0');r(g,4,11,8,1,'#fff');break;
+    case 'E':r(g,0,0,16,16,'#f4f7fa');r(g,1,2,14,14,'#6a7480');r(g,2,3,12,13,'#bfe6ff');r(g,4,5,2,4,'#e8f6ff');r(g,1,9,14,1,'#6a7480');break;
+    case 'Y':r(g,0,0,16,16,'#3f7d4f');for(let y=3;y<16;y+=4)r(g,0,y,16,1,'#2f6040');r(g,(variant.length%2)?2:10,0,3,1,'#5a9a68');break;
+    case 'y':r(g,0,0,16,16,'#b5654a');for(let y=3;y<14;y+=4){r(g,0,y,16,1,'#94503a');r(g,(y%8===3)?4:11,y-3,1,3,'#94503a')}r(g,0,14,16,2,'#7a4232');
+      if(variant==='w'){r(g,4,3,8,9,'#5b3a2a');r(g,5,2,6,1,'#5b3a2a');r(g,5,3,6,9,'#f2e6a0');r(g,7,3,2,9,'#5b3a2a')}break;
+    case 'Z':r(g,0,0,16,16,'#b5654a');r(g,0,14,16,2,'#7a4232');r(g,1,2,14,10,'#7a4232');r(g,2,3,12,8,'#f3ead2');r(g,3,4,4,6,'#ffffff');r(g,9,4,4,6,'#ffffff');r(g,7,4,2,6,'#8a5a2b');r(g,4,6,2,1,'#aaa');r(g,10,6,2,1,'#aaa');r(g,4,8,2,1,'#aaa');r(g,10,8,2,1,'#aaa');break;
+    case 'V':{r(g,0,0,16,16,'#d5dbe2');r(g,0,12,16,4,'#b8c0ca');r(g,0,4,16,1,'#c4ccd5');r(g,2,2,4,2,'#eef2f6');
+      const gr='#7cc85a';
+      if(variant.includes('T')&&variant.includes('L'))for(let i=0;i<8;i++)r(g,0,i,8-i,1,gr);
+      if(variant.includes('T')&&variant.includes('R'))for(let i=0;i<8;i++)r(g,8+i,i,8-i,1,gr);
+      if(!variant.includes('T')&&variant.includes('L'))for(let i=0;i<5;i++)r(g,0,i,5-i,1,gr);
+      if(!variant.includes('T')&&variant.includes('R'))for(let i=0;i<5;i++)r(g,11+i,i,5-i,1,gr);
+      if(variant.includes('M'))r(g,6,0,4,16,'#4a5260');break;}
+    case 'v':r(g,0,0,16,16,'#a3a9b2');for(let y=4;y<14;y+=5){r(g,0,y,16,1,'#878d96');r(g,(y%10===4)?5:11,y-4,1,4,'#878d96')}r(g,0,14,16,2,'#6f757e');if(variant==='w'){r(g,6,4,4,4,'#34304a');r(g,7,5,2,2,'#ffe28a')}break;
+    case 'W':r(g,0,0,16,16,'#d6f1f3');r(g,0,0,16,1,'#ffffff');r(g,7,0,2,16,'#ffffff');r(g,0,7,16,1,'#ffffff');r(g,2,10,4,5,'#5bb54a');r(g,10,11,4,4,'#4fa443');r(g,3,9,2,1,'#ff8fb1');break;
+    case 'w':r(g,0,0,16,16,'#c4ebee');r(g,0,0,16,1,'#ffffff');r(g,0,0,1,16,'#ffffff');r(g,15,0,1,16,'#ffffff');r(g,0,6,16,1,'#ffffff');r(g,1,8,5,6,'#5bb54a');r(g,9,7,5,7,'#4fa443');r(g,3,7,2,2,'#ff8fb1');r(g,0,14,16,2,'#8aa094');break;
+    case 'P':pGrass(g);r(g,3,9,2,6,'#7a4e2c');r(g,11,9,2,6,'#7a4e2c');r(g,1,2,14,8,'#8a5a2b');r(g,2,3,12,6,'#c79a5f');r(g,3,4,4,3,'#ffffff');r(g,8,4,4,4,'#fff6c8');r(g,5,4,1,1,'#e0503f');r(g,10,4,1,1,'#3d7fd1');break;
+    case '*':pFloor(g);r(g,5,10,1,5,'#555');r(g,10,10,1,5,'#555');r(g,7,9,2,6,'#555');r(g,3,3,3,3,'#34304a');r(g,5,4,3,3,'#34304a');r(g,7,5,3,3,'#34304a');r(g,9,6,3,3,'#6a7480');r(g,3,3,1,2,'#bfe6ff');break;
+    case '%':pFloor(g);r(g,0,3,16,11,'#6b4a2a');r(g,0,3,16,1,'#8a5a34');r(g,0,13,16,1,'#4a3220');for(let i=0;i<4;i++){r(g,2+i*4,6,1,5,'#3f9a3a');r(g,1+i*4,5,3,2,'#5bb54a')}r(g,6,4,2,2,'#ff8fb1');break;
     case 'd':pFloor(g);r(g,2,2,12,12,'#b94a48');r(g,3,3,10,10,'#d0605c');break;
     default:r(g,0,0,16,16,'#000');
   }
@@ -508,6 +596,10 @@ function drawTileAt(ch,tx,ty,sx,sy,now,indoor){
   if(ch==='~'){const o=(Math.floor(now/500)+tx+ty)%2;r(ctx,sx,sy,16,16,'#4a8fe0');r(ctx,sx+2+o*2,sy+4,5,1,'#8cc4f5');r(ctx,sx+8-o*2,sy+11,5,1,'#8cc4f5');return}
   let variant='';
   if(ch==='H'&&tx%3===1)variant='w';
+  if('lcyvw'.includes(ch)&&tx%2===1)variant='w';
+  if(ch==='L'&&tx%4===1)variant='s';
+  if(ch==='V'){const V=(a,b)=>tileAt(a,b)==='V';
+    variant=(V(tx-1,ty)?'':'L')+(V(tx+1,ty)?'':'R')+(V(tx,ty-1)?'':'T')+(V(tx-1,ty)&&V(tx+1,ty)&&V(tx-2,ty)===V(tx+2,ty)?'M':'')}
   if(ch==='$'&&state.flags.treasure)ch='o';
   if(ch==='G')variant=isOpenGate()?'open':'shut';
   const key=ch+(indoor?'i':'o')+variant;
@@ -651,6 +743,40 @@ function drawSide(P,L,o,H,HH,hs,frame){
   else if(L.acc===2){P(4,0,9,4,C);P(3,3,10,2,shade(C,1.25))}
   else if(L.acc===3){P(5,0,6,1,'#3a3a46');P(9,1,1,3,'#3a3a46');P(8,4,3,4,C)}
 }
+const ANI={cat:{b:'#f0a050',d:'#c8783a',w:'#fff3e0',n:'#f08a9a'},dog:{b:'#b07a45',d:'#7a4e2c',w:'#f5ead8',n:'#2a2430'},
+  rabbit:{b:'#f6f6f6',d:'#d8d8de',w:'#f6c0cc'},chick:{b:'#ffd84d',d:'#e6b020',w:'#ff9a3c'},duck:{b:'#fafafa',d:'#d8dce2',w:'#ff9a3c'}};
+function drawAnimal(P,k,dir,frame){
+  const c=ANI[k],side=dir==='left'||dir==='right',back=dir==='up',f=frame;
+  if(k==='cat'||k==='dog'){
+    if(side){
+      [[4,1],[6,2],[10,1],[12,2]].forEach(([x,ph])=>P(x,17,1,f===ph?1:2,c.d));
+      P(4,12,10,5,c.b);P(5,15,8,1,c.w);
+      P(1,8,6,6,c.b);
+      if(k==='cat'){P(1,6,2,2,c.b);P(5,6,2,2,c.b);P(14,8,1,5,c.b);P(13,7,1,1,c.b)}
+      else{P(1,11,2,2,c.w);P(14,10,2,1,c.b);P(15,9,1,1,c.b)}
+      P(2,10,1,1,OUTC);P(1,12,1,1,c.n);
+      if(k==='dog')P(4,8,2,4,c.d);
+    }else{
+      P(5,18,2,1,f===1?c.d:c.b);P(9,18,2,1,f===2?c.d:c.b);
+      P(5,13,6,5,c.b);if(!back)P(6,14,4,4,c.w);
+      P(3,7,10,7,c.b);
+      if(k==='cat'){P(3,5,2,2,c.b);P(11,5,2,2,c.b);P(back?7:11,back?16:15,back?2:3,back?3:1,c.b)}
+      else{P(2,8,2,5,c.d);P(12,8,2,5,c.d);if(back)P(7,16,2,2,c.b)}
+      if(!back){P(5,9,1,2,OUTC);P(10,9,1,2,OUTC);if(k==='dog')P(6,11,4,2,c.w);P(7,11,2,1,c.n)}
+    }
+  }else if(k==='rabbit'){
+    if(side){P(5,17,2,2,c.b);P(10,17,3,2,c.b);P(5,12,8,5,c.b);P(13,13,2,2,'#ffffff');P(2,9,5,5,c.b);P(4,3,2,6,c.b);P(6,4,1,5,c.b);P(4,4,1,4,c.w);P(3,11,1,1,OUTC);P(2,12,1,1,c.w)}
+    else{P(5,18,2,1,c.b);P(9,18,2,1,c.b);P(5,12,6,6,c.b);P(4,8,8,6,c.b);P(5,2,2,6,c.b);P(9,2,2,6,c.b);
+      if(!back){P(5,3,1,4,c.w);P(10,3,1,4,c.w);P(6,10,1,1,OUTC);P(9,10,1,1,OUTC);P(7,11,2,1,c.w)}else P(7,16,2,2,'#ffffff')}
+  }else if(k==='chick'){
+    P(6,18,1,1,c.w);P(9,18,1,1,c.w);P(4,11,8,7,c.b);P(7,10,1,1,c.b);
+    if(side){P(5,12,1,1,OUTC);P(3,13,1,1,c.w);P(8,14,3,2,c.d)}
+    else{P(3,14,1,2,c.d);P(12,14,1,2,c.d);if(!back){P(6,13,1,1,OUTC);P(9,13,1,1,OUTC);P(7,14,2,1,c.w)}}
+  }else{
+    if(side){P(4,13,10,4,c.b);P(13,12,2,2,c.b);P(2,8,5,5,c.b);P(0,11,2,1,c.w);P(3,10,1,1,OUTC);P(7,14,4,2,c.d)}
+    else{P(3,13,10,4,c.b);P(5,8,6,5,c.b);if(!back){P(7,12,2,1,c.w);P(6,10,1,1,OUTC);P(9,10,1,1,OUTC)}}
+  }
+}
 function outline(g){
   const w=18,h=22,d=g.getImageData(0,0,w,h),a=d.data,src=new Uint8Array(w*h);
   for(let i=0;i<w*h;i++)src[i]=a[i*4+3]>0?1:0;
@@ -670,8 +796,9 @@ function getSprite(L,dir,frame){
   c=document.createElement('canvas');c.width=18;c.height=22;
   const g=c.getContext('2d');
   const P=(x,y,w,h,col)=>{g.fillStyle=col;g.fillRect(x+1,y+1,w,h)};
-  const o=clothes(L),hc=hairCol(L),hs=L.g+(L.hair||0);
-  if(dir==='left'||dir==='right')drawSide(P,L,o,hc.c,hc.h,hs,frame);
+  const o=L.animal?null:clothes(L),hc=L.animal?null:hairCol(L),hs=L.animal?'':L.g+(L.hair||0);
+  if(L.animal)drawAnimal(P,L.animal,dir,frame);
+  else if(dir==='left'||dir==='right')drawSide(P,L,o,hc.c,hc.h,hs,frame);
   else drawFB(P,L,o,hc.c,hc.h,hs,dir==='up',frame);
   outline(g);
   if(dir==='right'){
@@ -692,7 +819,7 @@ function loadMap(id,x,y,dir){
   entities=[player];
   for(const n of map.npcs||[]){
     const e=mkEnt(n.x,n.y,n.dir);
-    e.def=n;e.look=NPC_LOOK[n.id];e.home={x:n.x,y:n.y};e.speed=0.32;e.timer=1+Math.random()*2;
+    e.def=n;e.look=n.animal?{animal:n.animal}:NPC_LOOK[n.id];if(n.animal)e.speed=0.36;e.home={x:n.x,y:n.y};e.speed=0.32;e.timer=1+Math.random()*2;
     entities.push(e);
   }
   state.map=id;state.x=x;state.y=y;state.dir=dir;
@@ -701,7 +828,7 @@ function loadMap(id,x,y,dir){
   if(started){showBanner(map.name);updateHUD()}
 }
 function tileAt(x,y){if(y<0||y>=map.rows.length||x<0||x>=map.rows[0].length)return '#';return map.rows[y][x]}
-const SOLID=new Set('#RH~FBTXQSK$'.split(''));
+const SOLID=new Set('#RH~FBTXQSK$CcJLlAYyZVvWwP*%'.split(''));
 function isLocked(x,y){return !!(map.locked&&map.locked[x+','+y]&&!state.flags[map.lockFlag])}
 function passable(x,y,self){
   const c=tileAt(x,y);
@@ -944,7 +1071,7 @@ function interact(){
     if(!npc.moving)npc.dir=OPP[player.dir];
     npc.pause=3;
     const d=npc.def,res=d.talk();
-    if(!state.talked[d.id]){state.talked[d.id]=true;gainXP(5)}
+    if(!d.animal&&!state.talked[d.id]){state.talked[d.id]=true;gainXP(5)}
     say(res.lines,{name:d.name,after:res.after,choice:res.choice});
     return;
   }
@@ -958,7 +1085,7 @@ function interact(){
       if(mapId==='library'){
         if(!state.clues.c1)say(['책장에서 식물 도감을 찾았다.','「'+CONTENT.clues.c1.text+'」'],{after:()=>giveClue('c1')});
         else say(['식물 도감은 이미 단서 노트에 적어 두었다.']);
-      }else say(['실험 기록 노트가 빼곡히 꽂혀 있다.']);
+      }else say([({lab:'실험 기록 노트가 빼곡히 꽂혀 있다.',house:'가족 사진과 요리책이 꽂혀 있다.',observatory:'별자리 책이 가득 꽂혀 있다.'})[mapId]||'책이 꽂혀 있다.']);
       return;
     case 'K':
       if(!state.flags.tutStarted&&!state.flags.tutorial)say(['칠판에 「오늘의 탐험」이라고 적혀 있다.']);
@@ -967,6 +1094,8 @@ function interact(){
       else say(['「과학 탐험 규칙: '+CONTENT.clues.t0.text+'」']);
       return;
     case 'T':say(['깨끗한 책상이다.']);return;
+    case '*':say(['망원경으로 밤하늘을 들여다보았다. 별이 반짝반짝 빛난다!','(다음 단원 「별과 우주」에서 쓰일 예정)']);return;
+    case '%':say(['유리 지붕으로 들어온 햇빛을 받아 잎이 초록색으로 싱싱하다.']);return;
     case 'G':if(!isOpenGate())say(['굳게 잠긴 문이다.','마을 문제가 해결되면 열릴 것 같다.']);return;
     case '~':
       if(player.onBoat)return;
@@ -1328,7 +1457,7 @@ function openExperiment(){
 function openQuiz(){
   const q=CONTENT.quiz[0];
   let fb='',fbc='',solved=false;
-  listLayer({title:'자료실 컴퓨터',
+  listLayer({title:'도서관 컴퓨터',
     html:()=>`<p class="q">${q.q}</p>${fb?`<p class="fb ${fbc}">${fb}</p>`:''}`,
     items:q.options.map((o,i)=>({label:`${i+1}. ${o}`})),
     onSelect:(i,L)=>{
@@ -1382,6 +1511,8 @@ function continueGame(){
   if(!MAPS[state.map]){state.map='town';state.x=7;state.y=7}
   if(!state.flags.tutorial&&state.map!=='classroom')state.flags.tutorial=true;
   if(!state.name)state.name='탐험가';
+  {const m=MAPS[state.map],t=m.rows[state.y]&&m.rows[state.y][state.x];
+   if(!t||SOLID.has(t)&&t!=='~'||(t==='~'&&!state.onBoat)){const u=UNITS.find(x=>x.maps.includes(state.map))||UNITS[1];state.map=u.land.map;state.x=u.land.x;state.y=u.land.y;state.dir=u.land.dir}}
   started=true;
   loadMap(state.map,state.x,state.y,state.dir);updateHUD();
 }
