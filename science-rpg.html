@@ -141,6 +141,8 @@ canvas.ava.big{width:108px;height:132px}
 .gpick{display:flex;justify-content:center;gap:22px;margin:10px 0 2px}
 .gpick div{text-align:center;font-size:13px;color:#5b5770}
 /* 지도 */
+.wmwrap{position:relative}
+.wml{position:absolute;transform:translateX(-50%);font-size:11px;font-weight:800;color:#24212f;background:rgba(255,255,255,.88);border-radius:4px;padding:0 4px;white-space:nowrap;pointer-events:none}
 #wmap{width:100%;height:auto;image-rendering:pixelated;border:3px solid #34304a;border-radius:8px;display:block;background:#4a8fe0}
 /* 헬기 */
 #heli{position:absolute;top:30%;left:-20%;font-size:calc(var(--fs)*3.2);pointer-events:none;z-index:4;display:none}
@@ -208,7 +210,7 @@ body.touch.land #bM{left:auto;right:22px;top:14px;transform:none}
    - 저장: 이 기기 브라우저에만 저장 (이름·학번 등 개인정보는 받지 않음)
    - 시작: 성별 고르기(고정) → 이름(별명) 짓기 → 꾸미기 → 교실 튜토리얼(안선생, 건너뛰기 가능)
    - 대화 중 ✕(S)를 누르면 대화가 바로 끝남 (질문이 있는 대화는 질문으로 바로 넘어감)
-   - 새싹 마을: 학교 앞에서 북·서·동·남 네 방향 길 (남쪽=숲길, 나머지=다음 단원 준비 중)
+   - 새싹 마을: 학교 앞에서 네 방향 길 (북=물리, 서=화학, 동=지구과학, 남=생명). 마을 문제를 해결하면 네 문이 열림
    - 새싹 마을 건물: 학교(교실)·가정집·연구소·도서관·관측소·온실 + 게시판 3곳 + 동물(고양이·강아지·토끼·병아리·오리)
    - 능력: Lv.2 배 타기(물 건너기), Lv.3 헬기(지도에서 클리어한 지역으로 이동)
    - 대사·문제·단서는 CONTENT / MAPS / UNITS 안의 [예시]. 나중에 실제 내용으로 교체
@@ -278,7 +280,13 @@ const UNITS=[
    summary:['[예시] 식물은 빛을 이용해 스스로 양분을 만든다.','[예시] 물과 흙만 있고 빛이 없으면 식물은 자라지 못한다.'],
    land:{map:'town',x:14,y:6,dir:'down'},
    isOpen:()=>true,isClear:()=>!!state.flags.persuaded},
-  {id:'u2',name:'남쪽 숲길',topic:'다음 단원 (준비 중)',maps:['forest'],goals:[],summary:[],
+  {id:'u3',name:'물리 지역',topic:'북쪽 · 물리 단원 (준비 중)',maps:['physics'],goals:[],summary:[],
+   land:{map:'physics',x:7,y:10,dir:'up'},isOpen:()=>!!state.flags.persuaded,isClear:()=>false},
+  {id:'u4',name:'화학 지역',topic:'서쪽 · 화학 단원 (준비 중)',maps:['chem'],goals:[],summary:[],
+   land:{map:'chem',x:14,y:6,dir:'left'},isOpen:()=>!!state.flags.persuaded,isClear:()=>false},
+  {id:'u5',name:'지구과학 지역',topic:'동쪽 · 지구과학 단원 (준비 중)',maps:['earth'],goals:[],summary:[],
+   land:{map:'earth',x:1,y:6,dir:'right'},isOpen:()=>!!state.flags.persuaded,isClear:()=>false},
+  {id:'u2',name:'생명 지역',topic:'남쪽 · 생명 단원 (준비 중)',maps:['forest'],goals:[],summary:[],
    land:{map:'forest',x:6,y:1,dir:'down'},
    isOpen:()=>!!state.flags.persuaded,isClear:()=>false}
 ];
@@ -288,6 +296,9 @@ const NPC_LOOK={
   granny:{g:'f',hair:0,hcCol:'#c9c9d2',gl:1,out:'c',top:'#c06a8a',bottom:'#5a4a5a',acc:0},
   astronomer:{g:'m',hair:1,hc:1,gl:0,out:'c',top:'#3d3a6e',bottom:'#2b2a3a',acc:2,accCol:'#5a4fa0'},
   gardener:{g:'f',hair:1,hc:2,gl:0,out:'c',top:'#6a994e',bottom:'#6b4a2a',acc:1,accCol:'#e9c46a'},
+  physguide:{g:'m',hair:0,hc:1,gl:1,out:'c',top:'#d9534f',bottom:'#3a3d49',acc:0},
+  chemguide:{g:'f',hair:2,hc:0,gl:1,out:3,acc:0},
+  earthguide:{g:'m',hair:2,hc:2,gl:0,out:'c',top:'#3d7fd1',bottom:'#4a4e5c',acc:1,accCol:'#2f7d5b'},
   ansun:{g:'m',hair:3,hc:0,gl:0,out:3,acc:0},
   guide:{g:'f',hair:1,hc:1,gl:0,out:'c',top:'#e76f51',bottom:'#4a4a5a',acc:0},
   doubter:{g:'m',hair:1,hc:0,gl:0,out:'c',top:'#8d6cc4',bottom:'#3a3a44',acc:0},
@@ -318,12 +329,12 @@ const MAPS={
     lockMsg:['문이 잠겨 있다.','안선생님 설명을 먼저 들어 보자.'],
     npcs:[{id:'ansun',name:'안선생',x:4,y:3,dir:'down',talk:ansunTalk}]},
   town:{name:'새싹 마을',indoor:false,rows:[
-    '####################g#########',
+    '####################G#########',
     '#,,........CCCCCCCC.=S.....,,#',
     '#,.........CCCCCCCC.=........#',
     '#..........cccJcccc.=......,,#',
     '#.S......P.cccDcccc.=......S.#',
-    'g============================g',
+    'G============================G',
     '#.RRRRR.......=.S.....YYYYYY.#',
     '#.HHHHH.......=.......yyZZyy.#',
     '#.HHDHH..F....=....F..yyDDyy.#',
@@ -345,14 +356,15 @@ const MAPS={
       '24,8':{to:'library',x:5,y:6,dir:'up'},'25,8':{to:'library',x:6,y:6,dir:'up'},
       '24,13':{to:'observatory',x:4,y:4,dir:'up'},
       '11,13':{to:'greenhouse',x:4,y:4,dir:'up'},'12,13':{to:'greenhouse',x:5,y:4,dir:'up'},
-      '14,21':{to:'forest',x:6,y:1,dir:'down'}},
-    signs:{'21,1':['「북쪽 길」','다음 단원 지역으로 이어지는 길이다. (준비 중)'],
-      '2,4':['「서쪽 길」','다음 단원 지역으로 이어지는 길이다. (준비 중)'],
-      '27,4':['「동쪽 길」','다음 단원 지역으로 이어지는 길이다. (준비 중)'],
-      '16,6':['「새싹 마을」','학교에서 네 방향으로 길이 나 있다.','북쪽·서쪽·동쪽 길: 다음 단원 지역 (준비 중)','남쪽 길: 숲길 — 마을 문제가 해결되면 열린다.','건물: 학교 · 가정집 · 연구소 · 도서관 · 관측소 · 온실'],
+      '14,21':{to:'forest',x:6,y:1,dir:'down'},
+      '20,0':{to:'physics',x:7,y:10,dir:'up'},'0,5':{to:'chem',x:14,y:6,dir:'left'},'29,5':{to:'earth',x:1,y:6,dir:'right'}},
+    signs:{'21,1':['「북쪽 길 ↑ 물리 지역」','힘, 전기, 빛과 에너지를 배우는 곳으로 이어진다.'],
+      '2,4':['「서쪽 길 ← 화학 지역」','물질의 특성과 변화를 배우는 곳으로 이어진다.'],
+      '27,4':['「동쪽 길 → 지구과학 지역」','땅, 날씨, 별과 우주를 배우는 곳으로 이어진다.'],
+      '16,6':['「새싹 마을」','학교 앞에서 네 방향으로 길이 나 있다.','북쪽: 물리 · 서쪽: 화학 · 동쪽: 지구과학 · 남쪽: 생명','마을 문제를 해결하면 네 방향 문이 모두 열린다.','건물: 학교 · 가정집 · 연구소 · 도서관 · 관측소 · 온실'],
       '9,4':['📌 학교 게시판','[복습 예시] 식물은 잎에서 빛을 이용해 양분을 만든다.','모르는 게 생기면 MENU → 학습 노트를 보자.'],
       '20,11':['📌 마을 게시판','관측소: 다음 단원 「별과 우주」 준비 중!','온실: 식물을 직접 볼 수 있어요.'],
-      '12,19':['📌 남쪽 게시판','남쪽 숲길로 가는 문은 마을 문제가 해결되면 열립니다.','[복습 예시] 증거를 모아 설득하기 — 단서 3개가 필요해요.']},
+      '12,19':['📌 남쪽 게시판','마을 바깥 네 방향 문은 마을 문제가 해결되면 열립니다.','[복습 예시] 증거를 모아 설득하기 — 단서 3개가 필요해요.']},
     npcs:[
       {id:'guide',name:'마을 안내원',x:13,y:6,dir:'down',talk:()=>({lines:[
         '안녕, {이름}! 여기는 새싹 마을이야.',
@@ -362,7 +374,7 @@ const MAPS={
         'MENU를 누르면 학습 노트에서 다음 할 일을 볼 수 있어.']})},
       {id:'doubter',name:'고집쟁이 주민',x:12,y:9,dir:'down',talk:doubterTalk},
       {id:'guard',name:'문지기',x:15,y:20,dir:'left',talk:()=>({lines:state.flags.persuaded
-        ?['문이 열렸어! 남쪽 숲길로 가 봐.']
+        ?['문이 열렸어! 남쪽으로 가면 생명 지역이야.','북쪽은 물리, 서쪽은 화학, 동쪽은 지구과학 지역으로 이어져.']
         :['이 문은 마을 문제가 해결되어야 열려.','저 고집쟁이 주민을 설득해 보는 게 어때?']})},
       {id:'kid',name:'꼬마',x:20,y:14,dir:'down',wander:true,talk:()=>({lines:['나 여기저기 돌아다니는 중이야!','관측소 망원경으로 별 본 적 있어?']})},
       {id:'cat',name:'고양이',animal:'cat',x:6,y:9,dir:'down',wander:true,talk:()=>({lines:['야옹~','(고양이가 다리에 몸을 비빈다)']})},
@@ -441,7 +453,55 @@ const MAPS={
         '책장을 살펴보면 단서가 있을지도 몰라.',
         '위쪽 컴퓨터에서는 문제를 풀 수 있어.']})}
     ]},
-  forest:{name:'남쪽 숲길',indoor:false,rows:[
+  physics:{name:'물리 지역',indoor:false,rows:[
+    '################',
+    '#..............#',
+    '#..##....,,....#',
+    '#..##....,,....#',
+    '#.....S........#',
+    '#......=.......#',
+    '#......=.......#',
+    '#.,,...=....##.#',
+    '#.,,...=....##.#',
+    '#......=.......#',
+    '#......=.......#',
+    '#######u########'],
+    warps:{'7,11':{to:'town',x:20,y:1,dir:'down'}},
+    signs:{'6,4':['「물리 지역」','힘의 작용, 운동과 에너지, 전기와 자기, 빛과 파동을 배우는 곳이다.','(단원 내용 준비 중)']},
+    npcs:[{id:'physguide',name:'물리 안내원',x:9,y:5,dir:'down',talk:()=>({lines:['어서 와, {이름}! 여기는 물리 지역이야.','힘과 운동, 전기, 빛에 관한 수수께끼가 이곳에 생길 거야. (준비 중)']})},{id:'pdog',name:'강아지',animal:'dog',x:4,y:9,dir:'right',wander:true,talk:()=>({lines:['멍! (공을 물고 왔다)']})}]},
+  chem:{name:'화학 지역',indoor:false,rows:[
+    '################',
+    '#..............#',
+    '#.,,......##...#',
+    '#.,,......##...#',
+    '#..............#',
+    '#.....S........#',
+    '#..============u',
+    '#..............#',
+    '#..##.....,,...#',
+    '#..##.....,,...#',
+    '#..............#',
+    '################'],
+    warps:{'15,6':{to:'town',x:1,y:5,dir:'right'}},
+    signs:{'6,5':['「화학 지역」','물질의 상태 변화, 물질의 특성과 구성, 화학 반응을 배우는 곳이다.','(단원 내용 준비 중)']},
+    npcs:[{id:'chemguide',name:'화학 안내원',x:8,y:4,dir:'down',talk:()=>({lines:['반가워, {이름}! 여기는 화학 지역이야.','물질이 변하는 신기한 현상들을 여기서 탐구하게 될 거야. (준비 중)']})},{id:'cchick',name:'병아리',animal:'chick',x:12,y:9,dir:'left',wander:true,talk:()=>({lines:['삐약!']})}]},
+  earth:{name:'지구과학 지역',indoor:false,rows:[
+    '################',
+    '#..............#',
+    '#...##....,,...#',
+    '#...##....,,...#',
+    '#..............#',
+    '#........S.....#',
+    'u============..#',
+    '#..............#',
+    '#.,,.....##....#',
+    '#.,,.....##....#',
+    '#..............#',
+    '################'],
+    warps:{'0,6':{to:'town',x:28,y:5,dir:'left'}},
+    signs:{'9,5':['「지구과학 지역」','지권의 변화, 날씨와 기후, 태양계, 별과 우주를 배우는 곳이다.','(단원 내용 준비 중)']},
+    npcs:[{id:'earthguide',name:'지구과학 안내원',x:7,y:4,dir:'down',talk:()=>({lines:['안녕, {이름}! 여기는 지구과학 지역이야.','땅과 하늘, 우주의 비밀을 풀 곳이지. (준비 중)']})},{id:'ecat',name:'고양이',animal:'cat',x:12,y:9,dir:'left',wander:true,talk:()=>({lines:['야옹? (별을 올려다본다)']})}]},
+  forest:{name:'생명 지역 · 남쪽 숲길',indoor:false,rows:[
     '######u#########',
     '#.....=........#',
     '#.,,..=...##...#',
@@ -457,11 +517,11 @@ const MAPS={
     '#~~~~~~~~~.....#',
     '################'],
     warps:{'6,0':{to:'town',x:14,y:20,dir:'up'}},
-    signs:{'7,6':['「이 앞은 다음 단원 지역」','(아직 준비 중)']},
+    signs:{'7,6':['「생명 지역」','생물의 구성과 다양성, 동물과 에너지, 생식과 유전을 배우는 곳이다.','(단원 내용 준비 중)']},
     npcs:[
       {id:'frabbit',name:'토끼',animal:'rabbit',x:13,y:3,dir:'left',wander:true,talk:()=>({lines:['(토끼가 풀을 오물오물 먹고 있다)']})},
       {id:'fduck',name:'오리',animal:'duck',x:7,y:9,dir:'left',talk:()=>({lines:['꽥!']})},
-      {id:'traveler',name:'나그네',x:10,y:9,dir:'left',talk:()=>({lines:['여기는 다음 단원 지역이 들어올 자리야.','저 호수 가운데 섬에 상자가 보이지? 배가 있으면 건너갈 수 있을 텐데.']})}
+      {id:'traveler',name:'나그네',x:10,y:9,dir:'left',talk:()=>({lines:['여기는 생명 지역이야. 생명 단원 내용이 들어올 자리지.','저 호수 가운데 섬에 상자가 보이지? 배가 있으면 건너갈 수 있을 텐데.']})}
     ]}
 };
 
@@ -502,13 +562,13 @@ function finishTutorial(){
 }
 
 function doubterTalk(){
-  if(state.flags.persuaded) return {lines:['네 말이 맞았어. 식물은 빛을 받아 스스로 양분을 만드는구나!','남쪽 문은 열어 두었어.']};
+  if(state.flags.persuaded) return {lines:['네 말이 맞았어. 식물은 빛을 받아 스스로 양분을 만드는구나!','마을의 네 방향 문을 모두 열어 두었어.']};
   return {lines:['식물은 흙을 먹고 자라는 거야! 당연하잖아?','아니라고? 그럼 증거라도 있어?'],
     choice:{labels:['증거를 보여 준다','아니요'],on:[()=>{
       const n=unitFound('u1');
       if(n>=3){
-        say(['(단서 노트의 증거 3개를 보여 주었다.)','...흙과 물이 있어도 빛이 없으면 자라지 않았다고?','내가 틀렸네. 고마워, {이름}! 남쪽 문을 열어 줄게.'],{name:'고집쟁이 주민',after:()=>{
-          state.flags.persuaded=true;save();toast('남쪽 문이 열렸다!');gainXP(40);
+        say(['(단서 노트의 증거 3개를 보여 주었다.)','...흙과 물이 있어도 빛이 없으면 자라지 않았다고?','내가 틀렸네. 고마워, {이름}! 마을 바깥으로 나가는 문들을 모두 열어 줄게.'],{name:'고집쟁이 주민',after:()=>{
+          state.flags.persuaded=true;save();toast('네 방향 문이 모두 열렸다!');gainXP(40);
         }});
       }else{
         say(['(단서 노트를 펼쳐 보았지만 증거가 부족하다.)',`단서 ${n}/3 — MENU의 학습 노트에서 다음 할 일을 확인해 보자.`]);
@@ -1204,15 +1264,16 @@ function openRewards(){
 }
 
 /* ---------- 지도·헬기 ---------- */
-const WNODES=[{u:'u0',x:40,y:96},{u:'u1',x:100,y:64},{u:'u2',x:160,y:92},{u:null,name:'??? (다음 단원)',x:212,y:44}];
+const WNODES=[{u:'u0',x:96,y:50},{u:'u1',x:120,y:72},{u:'u3',x:120,y:20},{u:'u4',x:36,y:72},{u:'u5',x:204,y:72},{u:'u2',x:120,y:120}];
+const WEDGES=[[1,0],[1,2],[1,3],[1,4],[1,5]];
 function drawWorld(cv,sel){
   const g=cv.getContext('2d');g.imageSmoothingEnabled=false;
   r(g,0,0,240,140,'#4a8fe0');
   for(let i=0;i<14;i++)r(g,(i*37)%240,(i*23)%140,6,1,'#8cc4f5');
-  r(g,14,24,212,104,'#7cc85a');r(g,10,34,8,84,'#7cc85a');r(g,222,30,10,80,'#7cc85a');r(g,24,18,190,8,'#7cc85a');
-  r(g,150,110,40,18,'#4a8fe0');
-  [[30,40],[60,30],[190,70],[200,110],[120,110],[80,108]].forEach(([x,y])=>{r(g,x,y,8,7,'#2f7d3a');r(g,x+3,y+7,2,2,'#7a4e2c')});
-  for(let i=0;i<WNODES.length-1;i++){const a=WNODES[i],b=WNODES[i+1];
+  r(g,12,8,216,124,'#7cc85a');r(g,8,20,4,100,'#7cc85a');r(g,228,20,4,100,'#7cc85a');
+  r(g,150,100,30,22,'#4a8fe0');r(g,60,96,20,10,'#a3a9b2');r(g,180,30,16,10,'#e9e4d0');
+  [[30,30],[56,24],[186,96],[206,108],[84,112],[160,40]].forEach(([x,y])=>{r(g,x,y,8,7,'#2f7d3a');r(g,x+3,y+7,2,2,'#7a4e2c')});
+  for(const [ia,ib] of WEDGES){const a=WNODES[ia],b=WNODES[ib];
     const steps=24;for(let k=0;k<=steps;k+=2){r(g,Math.round(a.x+(b.x-a.x)*k/steps)-1,Math.round(a.y+(b.y-a.y)*k/steps)-1,3,3,'#dcc48e')}}
   WNODES.forEach((n,i)=>{
     const u=n.u&&UNITS.find(x=>x.id===n.u),open=u&&u.isOpen(),clear=u&&u.isClear(),here=u&&u.maps.includes(state.map);
@@ -1232,7 +1293,7 @@ function openWorldMap(){
     return{label:u.name,note:here?'📍 현재 위치':u.isClear()?(heli?'✔ 클리어 · 🚁 이동 가능':'✔ 클리어'):'진행 중'};
   });
   listLayer({title:'지도',items,index:Math.max(0,WNODES.findIndex(n=>{const u=n.u&&UNITS.find(x=>x.id===n.u);return u&&u.maps.includes(state.map)})),
-    html:()=>`<canvas id="wmap" width="240" height="140"></canvas><p class="muted" style="margin-top:6px">${heli?'🚁 클리어한 지역을 고르면 헬기로 바로 날아가요.':'🔒 Lv.3이 되면 헬기를 타고 클리어한 지역으로 날아갈 수 있어요.'}</p>`,
+    html:()=>`<div class="wmwrap"><canvas id="wmap" width="240" height="140"></canvas>${WNODES.map(n=>{const u=UNITS.find(x=>x.id===n.u);return `<span class="wml" style="left:${n.x/240*100}%;top:${(n.y+9)/140*100}%">${u.name.replace(' 지역','')}</span>`}).join('')}</div><p class="muted" style="margin-top:6px">${heli?'🚁 클리어한 지역을 고르면 헬기로 바로 날아가요.':'🔒 Lv.3이 되면 헬기를 타고 클리어한 지역으로 날아갈 수 있어요.'}</p>`,
     onRender:(el,L)=>drawWorld(el.querySelector('#wmap'),L.i),
     onSelect:(i,L)=>{
       const n=WNODES[i],u=n.u&&UNITS.find(x=>x.id===n.u);
