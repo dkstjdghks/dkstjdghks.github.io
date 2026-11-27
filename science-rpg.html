@@ -36,9 +36,9 @@ body.touch #hudMenu{display:none}
 #dlg::after{content:'▼';position:absolute;right:.8em;bottom:.3em;font-size:.7em;color:#e0503f;opacity:0}
 #dlg.done::after{animation:blink .8s infinite}
 @keyframes blink{50%{opacity:1}}
-#choice{position:absolute;right:.4em;bottom:calc(100% + 6px);background:#fbfaf4;color:#24212f;border:3px solid #34304a;box-shadow:inset 0 0 0 2px #fff,inset 0 0 0 4px #c9c6d8;border-radius:8px;padding:.35em .5em;display:none;min-width:6.5em}
+#choice{position:absolute;right:.4em;bottom:calc(100% + 1.7em);max-width:calc(100% - .8em);line-height:1.35;background:#fbfaf4;color:#24212f;border:3px solid #34304a;box-shadow:inset 0 0 0 2px #fff,inset 0 0 0 4px #c9c6d8;border-radius:8px;padding:.35em .5em;display:none;min-width:6.5em}
 #choice.show{display:block}
-#choice .opt{padding:.25em .3em .25em 1.2em;position:relative;cursor:pointer}
+#choice .opt{padding:.3em .3em .3em 1.2em;position:relative;cursor:pointer}
 #choice .opt.cur::before{content:'▶';position:absolute;left:.1em;color:#e0503f;font-size:.85em;top:.35em}
 
 /* 패널 */
@@ -613,6 +613,42 @@ function finishTutorial(){
   toast('교실 문이 열렸다!');
 }
 
+/* MBTI 점쟁이와의 토론: 주장마다 증거에 맞는 대답 고르기 */
+const DEBATE=[
+  {claim:['좋아, 들어 보지. I는 남 앞에 절대 못 나서! 아니라면 증거를 대 봐.'],
+   opts:[{t:'합창단원은 I인데 축제에서 독창을 했어요.',ok:true,r:['뭐? I인데 무대에서 혼자 노래를…?','…그건 몰랐네.']},
+     {t:'저는 I가 아니라서 잘 모르겠어요.',r:['모르면 반박도 못 하지!'],h:'직접 확인한 증거를 대야 상대를 설득할 수 있다.'},
+     {t:'I도 기분에 따라 E가 될 수 있잖아요.',r:['그건 그냥 네 생각 아니야?'],h:'근거 없는 생각보다 실제 사례가 더 설득력 있다.'}]},
+  {claim:['그래도 T는 남의 마음에 공감을 못 해! 이건 확실하다고.'],
+   opts:[{t:'MBTI는 다 엉터리예요!',r:['다 엉터리라고? 그건 너무 지나친 말이지!'],h:'반박할 때도 증거가 보여 주는 것보다 지나친 주장은 설득력이 떨어진다.'},
+     {t:'T인 주민이 다친 강아지를 밤새 돌봤어요.',ok:true,r:['T인데 밤새 강아지 곁을 지켰다고…?','공감을 못 하는 사람이라면 그러지 않았겠지…']},
+     {t:'T인 사람도 착하다고 들었어요.',r:['누가 그래? 들은 얘기로는 안 넘어가!'],h:'남에게 들은 이야기보다 직접 확인한 사례가 더 강한 증거다.'}]},
+  {claim:['흥, 그래도 검사 결과는 정확해. 한 번 나온 유형은 평생 안 바뀌어!'],
+   opts:[{t:'제 친구는 유형이 한 번도 안 바뀌었대요.',r:['봐, 내 말이 맞잖아!'],h:'이 사례는 오히려 점쟁이의 주장을 돕는다. 주장과 반대되는 증거를 골라야 한다.'},
+     {t:'인터넷 검사라서 믿을 수 없어요.',r:['그건 증거가 아니라 짐작이잖아?'],h:'짐작이 아니라 자료로 보여 주자.'},
+     {t:'다시 검사하면 다른 유형이 나오기도 한다는 자료가 있어요.',ok:true,r:['같은 사람인데 결과가 달라지기도 한다고…?','그럼 유형이 평생 그대로라고 할 수는 없겠네.']}]},
+  {claim:['그럼… MBTI는 아무 쓸모도 없다는 거야?'],
+   opts:[{t:'네, 완전히 쓸모없어요.',r:['너도 너무 단정하는 거 아니야?'],h:'증거가 보여 주는 만큼만 결론을 내리자.'},
+     {t:'유형이 잘 맞는 사람끼리만 친구하면 돼요.',r:['그건 내가 하던 말이랑 똑같잖아!'],h:'유형으로 사람을 나누고 단정하는 것 자체가 문제였다.'},
+     {t:'자신을 돌아보는 참고는 되지만, 그것만으로 사람을 단정하면 안 돼요.',ok:true,r:['참고는 하되, 사람은 직접 겪어 보고 판단해야 한다…','네 말이 맞아.']}]}
+];
+function debate(i){
+  const nm='MBTI 점쟁이';
+  if(i>=DEBATE.length){
+    say(['내가 틀렸어. 고마워, {이름}!','마을 바깥으로 나가는 문들을 모두 열어 줄게.'],{name:nm,after:()=>{
+      state.flags.persuaded=true;save();toast('네 방향 문이 모두 열렸다!');gainXP(40);
+    }});
+    return;
+  }
+  const d=DEBATE[i],opts=[...d.opts].sort(()=>Math.random()-.5);
+  say(d.claim,{name:nm,choice:{labels:opts.map(o=>o.t),
+    onCancel:()=>say(['생각이 정리되면 다시 와! (처음부터 다시 이야기하게 된다)'],{name:nm}),
+    on:opts.map(o=>()=>{
+      if(o.ok)say(o.r,{name:nm,after:()=>{toast(`논리 ${i+1}/${DEBATE.length} 통과!`);debate(i+1)}});
+      else say(o.r,{name:nm,after:()=>say(['💡 '+o.h,'다른 대답을 골라 보자.'],{after:()=>debate(i)})});
+    })}});
+}
+
 function doubterTalk(){
   const nm='MBTI 점쟁이';
   if(state.flags.persuaded) return {lines:['유형은 참고만 하고, 사람은 직접 겪어 보고 판단해야겠어.','마을의 네 방향 문을 모두 열어 두었어. 고마워, {이름}!']};
@@ -620,13 +656,7 @@ function doubterTalk(){
     choice:{labels:['증거를 보여 준다','아니요'],on:[()=>{
       const n=unitFound('u1');
       if(n>=3){
-        say(['(단서 노트의 증거 3개를 보여 주었다.)',
-          'I인데 축제에서 독창을 했고… T인데 다친 강아지를 밤새 돌봤다고?',
-          '게다가 같은 사람도 다시 검사하면 다른 유형이 나오기도 한다니…',
-          '유형은 참고는 될 수 있어도, 그것만으로 사람을 단정하면 안 되겠구나.',
-          '내가 틀렸어. 고마워, {이름}! 마을 바깥으로 나가는 문들을 모두 열어 줄게.'],{name:nm,after:()=>{
-          state.flags.persuaded=true;save();toast('네 방향 문이 모두 열렸다!');gainXP(40);
-        }});
+        say(['(단서 노트를 펼치고 반박을 시작했다!)','(점쟁이의 주장마다 가장 알맞은 대답을 골라 보자.)'],{after:()=>debate(0)});
       }else{
         say(['(단서 노트를 펼쳐 보았지만 증거가 부족하다.)',`단서 ${n}/3 — MENU의 학습 노트에서 다음 할 일을 확인해 보자.`]);
       }
@@ -1142,6 +1172,7 @@ function dlgKey(a){
   if(atChoice()){
     const nC=DLG.opts.choice.labels.length;
     if(a==='up'||a==='down'){DLG.ci=(DLG.ci+(a==='up'?-1:1)+nC)%nC;renderDlg();return}
+    if(a==='cancel'&&DLG.opts.choice.onCancel){const f=DLG.opts.choice.onCancel;endDlg();f();return}
     if(a==='ok'||a==='cancel'){const pick=a==='cancel'?nC-1:DLG.ci,f=DLG.opts.choice.on[pick];endDlg();f&&f()}
     return;
   }
